@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Workout</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Workout">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="apple-touch-startup-image" href="icons/splash.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #000; --card: #1c1c1e; --card2: #2c2c2e;
+  --purple: #5B5BF6; --orange: #F06A1D; --blue: #5B8AF6;
+  --red: #FF3B30; --green: #30D158;
+  --text: #fff; --text2: #8e8e93; --text3: #48484a;
+  --radius: 20px;
+}
+html, body { background: var(--bg); color: var(--text); font-family: -apple-system,'SF Pro Display','Inter',system-ui,sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; background: #000; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+  transition: opacity .5s ease;
+}
+#splash.hide { opacity: 0; pointer-events: none; }
+#splash svg { width: 100px; height: 100px; animation: splashPop .6s cubic-bezier(.34,1.56,.64,1) both; }
+#splash .app-name { font-size: 28px; font-weight: 800; letter-spacing: -.5px; animation: splashPop .6s .1s cubic-bezier(.34,1.56,.64,1) both; }
+#splash .tagline { font-size: 14px; color: var(--text2); animation: splashPop .6s .2s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes splashPop { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
+
+.screen { display: none; min-height: 100vh; padding-bottom: 90px; }
+.screen.active { display: block; }
+
+/* ── TABBAR ── */
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: #1c1c1e; border-top: 1px solid #2c2c2e;
+  display: flex; padding: 10px 0 env(safe-area-inset-bottom, 16px);
+}
+.tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: var(--text3); font-size: 10px; font-weight: 500; cursor: pointer; }
+.tabbar button.active { color: var(--text); }
+.tabbar button svg { width: 24px; height: 24px; }
+
+/* ── HEADER ── */
+.header { padding: 56px 16px 0; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 28px; font-weight: 800; letter-spacing: -.5px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 12px; background: var(--card); border: none; color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* ── CARDS ── */
+.card { background: var(--card); border-radius: var(--radius); padding: 18px; margin: 12px 16px 0; }
+.card-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+
+/* ── HOME ── */
+.treadmill-area { height: 200px; display: flex; align-items: center; justify-content: center; margin: 8px 16px 0; }
+.go-panel { background: var(--card); border-radius: var(--radius); margin: 0 16px; padding: 20px 16px 16px; }
+.go-btn { width: 90px; height: 90px; border-radius: 50%; background: #fff; border: none; color: #000; font-size: 22px; font-weight: 900; cursor: pointer; display: block; margin: 0 auto 16px; }
+.connect-row { display: flex; align-items: center; justify-content: space-between; background: var(--card2); border-radius: 14px; padding: 10px 12px; }
+.connect-status { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; flex: 1; min-width: 0; }
+.connect-status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; transition: all .3s; }
+.status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.disconnected { background: var(--red); }
+.connect-btn-pill { padding: 8px 16px; border-radius: 100px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.connect-btn-pill.connect { background: var(--purple); color: #fff; }
+.connect-btn-pill.disconnect { background: var(--card); color: var(--text2); border: 1px solid var(--text3); }
+.mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 16px 0; }
+.mini-card { background: var(--card); border-radius: 16px; padding: 14px; }
+.mini-label { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+.mini-val { font-size: 26px; font-weight: 800; }
+.mini-unit { font-size: 12px; color: var(--text2); margin-left: 3px; }
+
+/* ── LIVE ── */
+#screen-live { background: #000; }
+.live-header { padding: 52px 16px 0; display: flex; align-items: center; justify-content: space-between; }
+.live-title { font-size: 16px; font-weight: 700; color: var(--text2); }
+.live-time-label { font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.live-timer { font-size: 76px; font-weight: 800; text-align: center; letter-spacing: -3px; margin: 4px 0; font-variant-numeric: tabular-nums; }
+.live-main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 16px 0; }
+.live-metric-card { background: var(--card); border-radius: 18px; padding: 16px; }
+.live-metric-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+.live-metric-val { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+.live-metric-unit { font-size: 12px; color: var(--text2); margin-left: 2px; }
+.live-speed-card { background: var(--card); border-radius: 18px; padding: 16px; margin: 10px 16px 0; }
+.speed-row { display: flex; align-items: center; justify-content: space-between; }
+.speed-big { font-size: 54px; font-weight: 800; letter-spacing: -2px; }
+.speed-controls { display: flex; gap: 12px; }
+.speed-ctrl-btn { width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer; font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.speed-ctrl-btn.minus { background: var(--card2); color: var(--text); }
+.speed-ctrl-btn.plus  { background: var(--purple); color: #fff; }
+.speed-bar { margin-top: 10px; height: 4px; background: var(--card2); border-radius: 2px; overflow: hidden; }
+.speed-bar-fill { height: 100%; background: linear-gradient(90deg, var(--purple), #8B5BF6); border-radius: 2px; transition: width .3s; }
+.live-stop-btn { margin: 14px 16px 0; width: calc(100% - 32px); padding: 18px; border-radius: 18px; background: rgba(255,59,48,.1); border: 1.5px solid rgba(255,59,48,.4); color: var(--red); font-size: 17px; font-weight: 700; cursor: pointer; }
+.live-pulse-ring { width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 8px; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.6)} }
+
+/* ── STATS ── */
+.period-tabs { display: flex; background: var(--card2); border-radius: 100px; padding: 3px; margin: 14px 16px 0; }
+.period-tab { flex: 1; padding: 8px 0; border-radius: 100px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+.period-tab.active { background: #fff; color: #000; }
+.period-tab.inactive { background: transparent; color: var(--text2); }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.stat-lbl { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.stat-val { font-size: 28px; font-weight: 800; letter-spacing: -.5px; line-height: 1; }
+.stat-unit { font-size: 12px; color: var(--text2); margin-left: 2px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 5px; height: 80px; margin-top: 16px; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar-fill { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; background: var(--card2); transition: height .4s cubic-bezier(.34,1.56,.64,1); }
+.bar-fill.has-data { background: linear-gradient(180deg,var(--purple) 0%,#7B4BF6 100%); }
+.bar-lbl { font-size: 9px; color: var(--text3); font-weight: 600; }
+.freq-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.freq-dot { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.freq-dot.on  { background: var(--purple); color: #fff; }
+.freq-dot.off { background: var(--card2); color: var(--text3); }
+
+/* ── HISTORY ── */
+.month-label { font-size: 14px; color: var(--text3); font-weight: 600; margin: 16px 16px 8px; }
+.workout-card { background: var(--card); border-radius: 18px; padding: 14px 16px; margin: 0 16px 10px; }
+.wc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.wc-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--purple); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 10px; }
+.wc-name { font-size: 15px; font-weight: 700; }
+.wc-date { font-size: 12px; color: var(--text3); }
+.wc-metrics { display: flex; gap: 20px; }
+.wc-mv { font-size: 20px; font-weight: 800; }
+.wc-mu { font-size: 12px; color: var(--text2); margin-left: 2px; }
+.empty-state { text-align: center; padding: 60px 32px; color: var(--text3); }
+.empty-state .big { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 15px; line-height: 1.6; }
+
+/* ── TOAST ── */
+.toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--card); color: var(--text); padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; white-space: nowrap; z-index: 9998; transition: transform .3s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 4px 24px rgba(0,0,0,.6); }
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH SCREEN ── -->
+<div id="splash">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="22" fill="#000"/>
+    <!-- Glow -->
+    <circle cx="50" cy="50" r="30" fill="#5B5BF6" opacity=".15"/>
+    <!-- Runner (simplified) -->
+    <circle cx="60" cy="26" r="7" fill="#5B5BF6"/>
+    <path d="M57 33 L48 52 L56 54 L60 38 L67 48 L74 42 L66 32Z" fill="#5B5BF6"/>
+    <path d="M50 52 L44 72 L51 73 L56 56Z" fill="#5B5BF6"/>
+    <path d="M56 54 L60 72 L68 70 L64 55Z" fill="#5B5BF6"/>
+    <path d="M48 52 L38 46 L36 50 L46 57Z" fill="#5B5BF6"/>
+    <!-- Treadmill -->
+    <rect x="16" y="76" width="68" height="5" rx="2.5" fill="#2c2c2e"/>
+    <rect x="19" y="81" width="5" height="8" rx="2" fill="#2c2c2e"/>
+    <rect x="76" y="81" width="5" height="8" rx="2" fill="#2c2c2e"/>
+  </svg>
+  <div class="app-name">Workout</div>
+  <div class="tagline">Беговая дорожка</div>
+</div>
+
+<!-- ══ HOME ══ -->
+<div id="screen-home" class="screen active">
+  <div class="header"><h1>Workout</h1><div></div></div>
+
+  <div class="treadmill-area">
+    <svg viewBox="0 0 280 180" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:260px">
+      <rect x="20" y="110" width="240" height="18" rx="6" fill="#2c2c2e"/>
+      <rect x="30" y="114" width="220" height="10" rx="4" fill="#3a3a3c"/>
+      <rect x="30" y="128" width="12" height="36" rx="4" fill="#2c2c2e"/>
+      <rect x="24" y="162" width="24" height="6" rx="3" fill="#3a3a3c"/>
+      <rect x="238" y="128" width="12" height="36" rx="4" fill="#2c2c2e"/>
+      <rect x="232" y="162" width="24" height="6" rx="3" fill="#3a3a3c"/>
+      <rect x="56" y="20" width="10" height="96" rx="5" fill="#3a3a3c"/>
+      <rect x="56" y="20" width="90" height="10" rx="5" fill="#3a3a3c"/>
+      <rect x="140" y="20" width="10" height="56" rx="5" fill="#3a3a3c"/>
+      <rect x="62" y="6" width="78" height="20" rx="6" fill="#2c2c2e"/>
+      <rect x="68" y="11" width="28" height="7" rx="3" fill="#5B5BF6" opacity=".7"/>
+      <rect x="100" y="11" width="16" height="7" rx="3" fill="#3a3a3c"/>
+      <line x1="40" y1="117" x2="240" y2="117" stroke="#2c2c2e" stroke-width="1.5"/>
+      <line x1="40" y1="121" x2="240" y2="121" stroke="#2c2c2e" stroke-width="1.5"/>
+    </svg>
+  </div>
+
+  <div class="go-panel">
+    <button class="go-btn" onclick="startWorkout()">GO</button>
+    <div class="connect-row">
+      <div class="connect-status">
+        <div class="status-dot disconnected" id="statusDot"></div>
+        <span id="statusText">Дорожка не подключена...</span>
+      </div>
+      <button class="connect-btn-pill connect" id="connectBtn" onclick="toggleConnect()">Подключить</button>
+    </div>
+  </div>
+
+  <div class="mini-grid">
+    <div class="mini-card">
+      <div class="mini-label" style="color:var(--blue)">Калории сегодня</div>
+      <div><span class="mini-val" id="todayKcal">0</span><span class="mini-unit">ккал</span></div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-label" style="color:var(--blue)">Дистанция сегодня</div>
+      <div><span class="mini-val" id="todayKm">0</span><span class="mini-unit">км</span></div>
+    </div>
+  </div>
+  <div style="margin:10px 16px 0">
+    <div class="mini-card" style="display:flex;align-items:center;justify-content:space-between">
+      <div class="mini-label" style="color:var(--orange);margin:0">Шаги</div>
+      <div><span class="mini-val" id="todaySteps">0</span><span class="mini-unit">шаги</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LIVE ══ -->
+<div id="screen-live" class="screen">
+  <div class="live-header">
+    <div></div>
+    <div class="live-title">Свободная тренировка</div>
+    <button class="icon-btn" onclick="pauseWorkout()" id="pauseBtn">⏸</button>
+  </div>
+  <div class="live-time-label">Время</div>
+  <div class="live-timer" id="liveTimer">00:00</div>
+  <div class="live-main-grid">
+    <div class="live-metric-card">
+      <div class="live-metric-label" style="color:var(--blue)">Дистанция</div>
+      <div><span class="live-metric-val" id="liveKm">0.00</span><span class="live-metric-unit">км</span></div>
+    </div>
+    <div class="live-metric-card">
+      <div class="live-metric-label" style="color:var(--orange)">Калории</div>
+      <div><span class="live-metric-val" id="liveKcal">0</span><span class="live-metric-unit">ккал</span></div>
+    </div>
+    <div class="live-metric-card">
+      <div class="live-metric-label" style="color:var(--purple)">Темп</div>
+      <div><span class="live-metric-val" id="livePace">--</span><span class="live-metric-unit">мин/км</span></div>
+    </div>
+    <div class="live-metric-card">
+      <div class="live-metric-label" style="color:var(--text2)">Шаги</div>
+      <div><span class="live-metric-val" id="liveSteps">0</span></div>
+    </div>
+  </div>
+  <div class="live-speed-card">
+    <div class="speed-row">
+      <div>
+        <div style="font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Скорость</div>
+        <div><span class="speed-big" id="liveSpeed">0.0</span><span style="font-size:16px;color:var(--text2);margin-left:4px">км/ч</span></div>
+      </div>
+      <div class="speed-controls">
+        <button class="speed-ctrl-btn minus" onclick="changeSpeed(-0.5)">−</button>
+        <button class="speed-ctrl-btn plus"  onclick="changeSpeed(+0.5)">＋</button>
+      </div>
+    </div>
+    <div class="speed-bar"><div class="speed-bar-fill" id="speedBarFill" style="width:0%"></div></div>
+  </div>
+  <button class="live-stop-btn" onclick="stopWorkout()">
+    <span class="live-pulse-ring"></span>Завершить тренировку
+  </button>
+</div>
+
+<!-- ══ STATS ══ -->
+<div id="screen-stats" class="screen">
+  <div class="header"><h1>Статистика</h1></div>
+  <div class="period-tabs" id="periodTabs">
+    <button class="period-tab active"   onclick="setPeriod('week',this)">Неделя</button>
+    <button class="period-tab inactive" onclick="setPeriod('month',this)">Месяц</button>
+    <button class="period-tab inactive" onclick="setPeriod('year',this)">Год</button>
+    <button class="period-tab inactive" onclick="setPeriod('all',this)">Всё</button>
+  </div>
+  <div class="card"><div class="stats-grid" id="statsGrid"></div><div class="bar-chart" id="barChart"></div></div>
+  <div class="card"><div class="card-title">Частота тренировок</div><div id="freqDots" class="freq-row"></div></div>
+</div>
+
+<!-- ══ HISTORY ══ -->
+<div id="screen-history" class="screen">
+  <div class="header"><h1>История</h1></div>
+  <div id="historyList" style="margin-top:16px"></div>
+</div>
+
+<!-- ══ TABBAR ══ -->
+<nav class="tabbar" id="tabbar">
+  <button class="active" onclick="showScreen('home')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Home
+  </button>
+  <button onclick="showScreen('stats')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 9h2v10H5zm4-4h2v14H9zm4 8h2v6h-2zm4-5h2v11h-2z"/></svg>
+    Stats
+  </button>
+  <button onclick="showScreen('history')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 117 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8H12z"/></svg>
+    History
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ STORAGE ════════════════════════════════
+const KEY = 'treadmill_v2';
+let workouts = [];
+function load() { try { workouts = JSON.parse(localStorage.getItem(KEY)||'[]'); } catch { workouts=[]; } }
+function save() { localStorage.setItem(KEY, JSON.stringify(workouts)); }
+
+// ══ SPLASH ═════════════════════════════════
+window.addEventListener('load', () => {
+  load(); renderToday();
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => document.getElementById('splash').remove(), 600);
+  }, 1400);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+});
+
+// ══ NAV ════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const tabs = ['home','stats','history'];
+  document.querySelectorAll('.tabbar button').forEach((b,i) => b.classList.toggle('active', tabs[i]===name));
+  document.getElementById('tabbar').style.display = name==='live' ? 'none' : 'flex';
+  if (name==='stats')   renderStats();
+  if (name==='history') renderHistory();
+  if (name==='home')    renderToday();
+}
+
+// ══ BLUETOOTH ══════════════════════════════
+const FTMS = '00001826-0000-1000-8000-00805f9b34fb';
+const TCHAR = '00002acd-0000-1000-8000-00805f9b34fb';
+let btDevice=null, btChar=null, isConnected=false;
+let liveSpeedVal=0, liveSeconds=0, liveKm=0, liveKcal=0, liveSteps=0;
+let liveInterval=null, isPaused=false, workoutStart=null;
+
+async function toggleConnect() {
+  if (isConnected) return disconnectBT();
+  if (!navigator.bluetooth) { showToast('❌ Нужен Chrome (Android / Desktop)'); return; }
+  document.getElementById('connectBtn').textContent = '⏳';
+  try {
+    btDevice = await navigator.bluetooth.requestDevice({ filters:[{services:[FTMS]}], optionalServices:[FTMS] });
+    btDevice.addEventListener('gattserverdisconnected', ()=>{ setConn(false,null); showToast('🔌 Отключилась'); });
+    const srv = await btDevice.gatt.connect();
+    const svc = await srv.getPrimaryService(FTMS);
+    btChar = await svc.getCharacteristic(TCHAR);
+    await btChar.startNotifications();
+    btChar.addEventListener('characteristicvaluechanged', onBTData);
+    setConn(true, btDevice.name||'Дорожка');
+    showToast('✅ ' + (btDevice.name||'Подключено'));
+  } catch(e) {
+    setConn(false,null);
+    showToast('❌ ' + (e.message||'Ошибка'));
+  }
+}
+function disconnectBT() {
+  if (btChar) { try{btChar.stopNotifications();}catch{} }
+  if (btDevice?.gatt?.connected) btDevice.gatt.disconnect();
+  setConn(false,null); showToast('🔌 Отключено');
+}
+function setConn(on, name) {
+  isConnected=on;
+  document.getElementById('statusDot').className='status-dot '+(on?'connected':'disconnected');
+  document.getElementById('statusText').textContent=on?(name||'Подключено'):'Дорожка не подключена...';
+  const btn=document.getElementById('connectBtn');
+  btn.textContent=on?'Отключить':'Подключить';
+  btn.className='connect-btn-pill '+(on?'disconnect':'connect');
+}
+function onBTData(e) {
+  try {
+    const dv=e.target.value;
+    const flags=dv.getUint16(0,true);
+    liveSpeedVal=dv.getUint16(2,true)*0.01;
+    if (flags&0x0004) liveKm=(dv.getUint8(4)|dv.getUint8(5)<<8|dv.getUint8(6)<<16)/1000;
+    if (flags&0x0100) {} // heart rate if needed
+    updateLiveUI();
+  } catch {}
+}
+
+// ══ LIVE ═══════════════════════════════════
+function startWorkout() {
+  liveSeconds=0; liveKm=0; liveKcal=0; liveSteps=0;
+  if (!isConnected) liveSpeedVal=0;
+  isPaused=false; workoutStart=new Date();
+  showScreen('live');
+  liveInterval=setInterval(()=>{
+    if(isPaused) return;
+    liveSeconds++;
+    if(!isConnected) {
+      liveSpeedVal=Math.min(5+Math.sin(liveSeconds/25)*2, 12);
+      liveKm+=liveSpeedVal/3600;
+      liveSteps+=Math.round(liveSpeedVal*1.4);
+      liveKcal=liveKm*65;
+    } else {
+      liveKm+=liveSpeedVal/3600;
+      liveSteps+=Math.round(liveSpeedVal*1.4);
+      liveKcal=liveKm*65;
+    }
+    updateLiveUI();
+  },1000);
+}
+function updateLiveUI() {
+  const m=String(Math.floor(liveSeconds/60)).padStart(2,'0');
+  const s=String(liveSeconds%60).padStart(2,'0');
+  document.getElementById('liveTimer').textContent=m+':'+s;
+  document.getElementById('liveKm').textContent=liveKm.toFixed(2);
+  document.getElementById('liveKcal').textContent=Math.round(liveKcal);
+  document.getElementById('liveSteps').textContent=Math.round(liveSteps).toLocaleString();
+  document.getElementById('liveSpeed').textContent=liveSpeedVal.toFixed(1);
+  document.getElementById('speedBarFill').style.width=Math.min((liveSpeedVal/20)*100,100)+'%';
+  if(liveSpeedVal>0.1){const pm=Math.floor(60/liveSpeedVal);const ps=Math.round((60/liveSpeedVal-pm)*60).toString().padStart(2,'0');document.getElementById('livePace').textContent=pm+':'+ps;}
+  else document.getElementById('livePace').textContent='--';
+}
+function changeSpeed(d) {
+  liveSpeedVal=Math.max(0,Math.min(20,liveSpeedVal+d));
+  updateLiveUI();
+  if(btChar&&isConnected){try{const buf=new ArrayBuffer(3);const v=new DataView(buf);v.setUint8(0,0x02);v.setUint16(1,Math.round(liveSpeedVal*100),true);btChar.writeValueWithoutResponse(buf);}catch{}}
+}
+function pauseWorkout(){isPaused=!isPaused;document.getElementById('pauseBtn').textContent=isPaused?'▶':'⏸';}
+function stopWorkout(){
+  if(liveInterval)clearInterval(liveInterval);
+  const w={id:Date.now(),date:workoutStart.toISOString().slice(0,10),time:workoutStart.toTimeString().slice(0,5),km:Math.round(liveKm*100)/100,kcal:Math.round(liveKcal),min:Math.round(liveSeconds/60),steps:Math.round(liveSteps)};
+  if(w.min>0){workouts.unshift(w);save();showToast('✅ Тренировка сохранена');}
+  showScreen('home');renderToday();
+}
+
+// ══ TODAY ══════════════════════════════════
+function renderToday(){
+  const today=new Date().toISOString().slice(0,10);
+  const tw=workouts.filter(w=>w.date===today);
+  document.getElementById('todayKcal').textContent=tw.reduce((s,w)=>s+w.kcal,0).toLocaleString();
+  document.getElementById('todayKm').textContent=tw.reduce((s,w)=>s+w.km,0).toFixed(2);
+  document.getElementById('todaySteps').textContent=tw.reduce((s,w)=>s+(w.steps||0),0).toLocaleString();
+}
+
+// ══ STATS ══════════════════════════════════
+let curPeriod='week';
+function setPeriod(p,btn){curPeriod=p;document.querySelectorAll('.period-tab').forEach(b=>b.className='period-tab inactive');btn.className='period-tab active';renderStats();}
+function filterP(list,p){
+  const now=new Date();
+  return list.filter(w=>{const d=new Date(w.date);
+    if(p==='week'){const ws=new Date(now);ws.setDate(now.getDate()-now.getDay());ws.setHours(0,0,0,0);return d>=ws;}
+    if(p==='month')return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    if(p==='year')return d.getFullYear()===now.getFullYear();
+    return true;});
+}
+function renderStats(){
+  const f=filterP(workouts,curPeriod);
+  const tMin=f.reduce((s,w)=>s+w.min,0),tKcal=f.reduce((s,w)=>s+w.kcal,0),tKm=f.reduce((s,w)=>s+w.km,0);
+  document.getElementById('statsGrid').innerHTML=`
+    <div><div class="stat-lbl" style="color:var(--blue)">Время</div><div><span class="stat-val">${tMin.toLocaleString()}</span><span class="stat-unit">мин</span></div></div>
+    <div><div class="stat-lbl" style="color:var(--orange)">Калории</div><div><span class="stat-val">${tKcal.toLocaleString()}</span><span class="stat-unit">ккал</span></div></div>
+    <div><div class="stat-lbl" style="color:var(--blue)">Дистанция</div><div><span class="stat-val">${tKm.toFixed(2)}</span><span class="stat-unit">км</span></div></div>
+    <div><div class="stat-lbl" style="color:var(--text2)">Тренировок</div><div><span class="stat-val">${f.length}</span></div></div>`;
+  let bars=[];
+  const now=new Date();
+  if(curPeriod==='week'){const days=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];bars=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(now.getDate()-6+i);const ds=d.toISOString().slice(0,10);return{label:days[d.getDay()],value:workouts.filter(w=>w.date===ds).reduce((s,w)=>s+w.kcal,0)};});}
+  else if(curPeriod==='month'){bars=Array.from({length:4},(_,i)=>{const ws=new Date(now);ws.setDate(now.getDate()-(3-i)*7);const we=new Date(ws);we.setDate(we.getDate()+6);return{label:`Н${i+1}`,value:workouts.filter(w=>{const d=new Date(w.date);return d>=ws&&d<=we;}).reduce((s,w)=>s+w.kcal,0)};});}
+  else if(curPeriod==='year'){const mn=['Я','Ф','М','А','М','И','И','А','С','О','Н','Д'];const yr=now.getFullYear();bars=mn.map((label,mi)=>({label,value:workouts.filter(w=>{const d=new Date(w.date);return d.getFullYear()===yr&&d.getMonth()===mi;}).reduce((s,w)=>s+w.kcal,0)}));}
+  else{const yrs=[...new Set(workouts.map(w=>w.date.slice(0,4)))].sort();bars=yrs.map(y=>({label:y,value:workouts.filter(w=>w.date.startsWith(y)).reduce((s,w)=>s+w.kcal,0)}));if(!bars.length)bars=[{label:now.getFullYear()+'',value:0}];}
+  const maxV=Math.max(...bars.map(b=>b.value),1);
+  document.getElementById('barChart').innerHTML=bars.map(b=>`<div class="bar-wrap"><div class="bar-fill${b.value>0?' has-data':''}" style="height:${Math.round((b.value/maxV)*68)+4}px"></div><div class="bar-lbl">${b.label}</div></div>`).join('');
+  const ad=new Set(workouts.map(w=>w.date));
+  document.getElementById('freqDots').innerHTML=Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);const ds=d.toISOString().slice(0,10);return`<div class="freq-dot ${ad.has(ds)?'on':'off'}">${d.getDate()}</div>`;}).join('');
+}
+
+// ══ HISTORY ════════════════════════════════
+function renderHistory(){
+  const list=document.getElementById('historyList');
+  if(!workouts.length){list.innerHTML='<div class="empty-state"><div class="big">🏃</div><p>Тренировок пока нет.<br>Нажми GO чтобы начать!</p></div>';return;}
+  const months={};workouts.forEach(w=>{const k=w.date.slice(0,7);if(!months[k])months[k]=[];months[k].push(w);});
+  const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  list.innerHTML=Object.entries(months).sort((a,b)=>b[0].localeCompare(a[0])).map(([key,ws])=>{const[y,m]=key.split('-');
+    return`<div class="month-label">${y} · ${MN[parseInt(m)-1]}</div>`+ws.map(w=>`<div class="workout-card"><div class="wc-top"><div style="display:flex;align-items:center"><div class="wc-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M13.5 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-3.6 13.4l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5.3 5.3 0 0 1-3.7-1.6l-1-1a2 2 0 0 0-1.4-.6c-.2 0-.5 0-.7.1L7 9.9V14h2V11l1.8-.7-1.6 7.3-4.1-.9-.4 2 6.2 1.2z"/></svg></div><span class="wc-name">Свободная тренировка</span></div><span class="wc-date">${w.date.slice(5).replace('-','/')} ${w.time}</span></div><div class="wc-metrics"><div><span class="wc-mv">${w.km}</span><span class="wc-mu">км</span></div><div><span class="wc-mv">${w.kcal}</span><span class="wc-mu">ккал</span></div><div><span class="wc-mv">${w.min}</span><span class="wc-mu">мин</span></div></div></div>`).join('');
+  }).join('');
+}
+
+// ══ TOAST ══════════════════════════════════
+let toastTmr=null;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');if(toastTmr)clearTimeout(toastTmr);toastTmr=setTimeout(()=>t.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
