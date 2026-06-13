@@ -126,6 +126,7 @@ html, body { background: var(--bg); color: var(--text); font-family: -apple-syst
 /* ── HISTORY ── */
 .month-label { font-size: 14px; color: var(--text3); font-weight: 600; margin: 16px 16px 8px; }
 .workout-card { background: var(--card); border-radius: 18px; padding: 14px 16px; margin: 0 16px 10px; }
+.workout-card { display: block; width: calc(100% - 32px); border: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
 .wc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .wc-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--purple); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 10px; }
 .wc-name { font-size: 15px; font-weight: 700; }
@@ -136,6 +137,41 @@ html, body { background: var(--bg); color: var(--text); font-family: -apple-syst
 .empty-state { text-align: center; padding: 60px 32px; color: var(--text3); }
 .empty-state .big { font-size: 48px; margin-bottom: 12px; }
 .empty-state p { font-size: 15px; line-height: 1.6; }
+
+/* ── DETAIL ── */
+#screen-detail { background: #000; padding: 64px 0 32px; }
+.detail-topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+.detail-back { width: 44px; height: 44px; border: none; border-radius: 14px; background: var(--card); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.detail-back svg { width: 24px; height: 24px; }
+.detail-head { padding: 30px 30px 0; }
+.detail-kicker { font-size: 15px; color: var(--text2); font-weight: 800; margin-bottom: 8px; }
+.detail-date { font-size: 13px; color: var(--text3); font-weight: 700; margin-bottom: 26px; }
+.detail-workout { font-size: 17px; font-weight: 800; margin-bottom: 14px; }
+.detail-distance { display: flex; align-items: flex-end; gap: 7px; margin-bottom: 28px; }
+.detail-distance strong { font-size: 68px; line-height: .9; letter-spacing: -3px; }
+.detail-distance span { font-size: 17px; color: var(--text2); font-weight: 800; padding-bottom: 7px; }
+.detail-card { background: var(--card); border-radius: 24px; margin: 16px 20px 0; padding: 24px 24px 26px; }
+.detail-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px 18px; }
+.detail-label { font-size: 13px; color: var(--text2); font-weight: 800; line-height: 1.3; margin-bottom: 8px; }
+.detail-value { font-size: 28px; color: var(--text); font-weight: 900; letter-spacing: -.5px; line-height: 1.05; }
+.detail-value small { font-size: 15px; color: var(--text2); font-weight: 800; margin-left: 3px; }
+.detail-section-title { display: flex; align-items: center; gap: 10px; color: var(--purple); font-size: 20px; font-weight: 900; margin-bottom: 26px; }
+.detail-section-title.speed { color: #00d1b2; }
+.detail-section-icon { width: 28px; height: 28px; border-radius: 50%; background: currentColor; color: #fff; display: flex; align-items: center; justify-content: center; }
+.detail-section-icon svg { width: 17px; height: 17px; }
+.detail-two-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.detail-bars { margin-top: 28px; }
+.detail-bar-label { font-size: 15px; color: var(--text2); font-weight: 700; margin-bottom: 12px; }
+.detail-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.detail-bar-fill { height: 30px; border-radius: 4px; background: linear-gradient(90deg, #5B5BF6, #9A7BFF); display: flex; align-items: center; padding: 0 10px; font-size: 16px; font-weight: 900; min-width: 48%; }
+.detail-bar-tag { background: rgba(91,91,246,.16); color: var(--purple); border-radius: 3px; padding: 5px 8px; font-size: 15px; font-weight: 900; }
+@media (max-width: 380px) {
+  .detail-head { padding-left: 24px; padding-right: 24px; }
+  .detail-distance strong { font-size: 58px; }
+  .detail-summary-grid { gap: 22px 14px; }
+  .detail-value { font-size: 24px; }
+  .detail-card { margin-left: 16px; margin-right: 16px; padding-left: 20px; padding-right: 20px; }
+}
 
 /* ── TOAST ── */
 .toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--card); color: var(--text); padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; white-space: nowrap; z-index: 9998; transition: transform .3s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 4px 24px rgba(0,0,0,.6); }
@@ -281,6 +317,17 @@ html, body { background: var(--bg); color: var(--text); font-family: -apple-syst
   <div id="historyList" style="margin-top:16px"></div>
 </div>
 
+<!-- ══ DETAIL ══ -->
+<div id="screen-detail" class="screen">
+  <div class="detail-topbar">
+    <button class="detail-back" onclick="showScreen('history')" aria-label="Назад">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M15 19 8 12l7-7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div></div>
+  </div>
+  <div id="detailContent"></div>
+</div>
+
 <!-- ══ TABBAR ══ -->
 <nav class="tabbar" id="tabbar">
   <button class="active" onclick="showScreen('home')">
@@ -322,7 +369,7 @@ function showScreen(name) {
   document.getElementById('screen-'+name).classList.add('active');
   const tabs = ['home','stats','history'];
   document.querySelectorAll('.tabbar button').forEach((b,i) => b.classList.toggle('active', tabs[i]===name));
-  document.getElementById('tabbar').style.display = name==='live' ? 'none' : 'flex';
+  document.getElementById('tabbar').style.display = (name==='live'||name==='detail') ? 'none' : 'flex';
   if (name==='stats')   renderStats();
   if (name==='history') renderHistory();
   if (name==='home')    renderToday();
@@ -332,7 +379,7 @@ function showScreen(name) {
 const FTMS = '00001826-0000-1000-8000-00805f9b34fb';
 const TCHAR = '00002acd-0000-1000-8000-00805f9b34fb';
 let btDevice=null, btChar=null, isConnected=false;
-let liveSpeedVal=0, liveSeconds=0, liveKm=0, liveKcal=0, liveSteps=0;
+let liveSpeedVal=0, liveMaxSpeed=0, liveSeconds=0, liveKm=0, liveKcal=0, liveSteps=0;
 let liveInterval=null, isPaused=false, workoutStart=null;
 
 async function toggleConnect() {
@@ -380,7 +427,7 @@ function onBTData(e) {
 
 // ══ LIVE ═══════════════════════════════════
 function startWorkout() {
-  liveSeconds=0; liveKm=0; liveKcal=0; liveSteps=0;
+  liveSeconds=0; liveKm=0; liveKcal=0; liveSteps=0; liveMaxSpeed=0;
   if (!isConnected) liveSpeedVal=0;
   isPaused=false; workoutStart=new Date();
   showScreen('live');
@@ -389,10 +436,12 @@ function startWorkout() {
     liveSeconds++;
     if(!isConnected) {
       liveSpeedVal=Math.min(5+Math.sin(liveSeconds/25)*2, 12);
+      liveMaxSpeed=Math.max(liveMaxSpeed,liveSpeedVal);
       liveKm+=liveSpeedVal/3600;
       liveSteps+=Math.round(liveSpeedVal*1.4);
       liveKcal=liveKm*65;
     } else {
+      liveMaxSpeed=Math.max(liveMaxSpeed,liveSpeedVal);
       liveKm+=liveSpeedVal/3600;
       liveSteps+=Math.round(liveSpeedVal*1.4);
       liveKcal=liveKm*65;
@@ -414,13 +463,14 @@ function updateLiveUI() {
 }
 function changeSpeed(d) {
   liveSpeedVal=Math.max(0,Math.min(20,liveSpeedVal+d));
+  liveMaxSpeed=Math.max(liveMaxSpeed,liveSpeedVal);
   updateLiveUI();
   if(btChar&&isConnected){try{const buf=new ArrayBuffer(3);const v=new DataView(buf);v.setUint8(0,0x02);v.setUint16(1,Math.round(liveSpeedVal*100),true);btChar.writeValueWithoutResponse(buf);}catch{}}
 }
 function pauseWorkout(){isPaused=!isPaused;document.getElementById('pauseBtn').textContent=isPaused?'▶':'⏸';}
 function stopWorkout(){
   if(liveInterval)clearInterval(liveInterval);
-  const w={id:Date.now(),date:workoutStart.toISOString().slice(0,10),time:workoutStart.toTimeString().slice(0,5),km:Math.round(liveKm*100)/100,kcal:Math.round(liveKcal),min:Math.round(liveSeconds/60),steps:Math.round(liveSteps)};
+  const w={id:Date.now(),date:workoutStart.toISOString().slice(0,10),time:workoutStart.toTimeString().slice(0,5),seconds:liveSeconds,km:Math.round(liveKm*100)/100,kcal:Math.round(liveKcal),min:Math.round(liveSeconds/60),steps:Math.round(liveSteps),maxSpeed:Math.round(liveMaxSpeed*10)/10};
   if(w.min>0){workouts.unshift(w);save();showToast('✅ Тренировка сохранена');}
   showScreen('home');renderToday();
 }
@@ -472,8 +522,62 @@ function renderHistory(){
   const months={};workouts.forEach(w=>{const k=w.date.slice(0,7);if(!months[k])months[k]=[];months[k].push(w);});
   const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
   list.innerHTML=Object.entries(months).sort((a,b)=>b[0].localeCompare(a[0])).map(([key,ws])=>{const[y,m]=key.split('-');
-    return`<div class="month-label">${y} · ${MN[parseInt(m)-1]}</div>`+ws.map(w=>`<div class="workout-card"><div class="wc-top"><div style="display:flex;align-items:center"><div class="wc-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M13.5 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-3.6 13.4l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5.3 5.3 0 0 1-3.7-1.6l-1-1a2 2 0 0 0-1.4-.6c-.2 0-.5 0-.7.1L7 9.9V14h2V11l1.8-.7-1.6 7.3-4.1-.9-.4 2 6.2 1.2z"/></svg></div><span class="wc-name">Свободная тренировка</span></div><span class="wc-date">${w.date.slice(5).replace('-','/')} ${w.time}</span></div><div class="wc-metrics"><div><span class="wc-mv">${w.km}</span><span class="wc-mu">км</span></div><div><span class="wc-mv">${w.kcal}</span><span class="wc-mu">ккал</span></div><div><span class="wc-mv">${w.min}</span><span class="wc-mu">мин</span></div></div></div>`).join('');
+    return`<div class="month-label">${y} · ${MN[parseInt(m)-1]}</div>`+ws.map(w=>`<button class="workout-card" onclick="showWorkoutDetail(${w.id})"><div class="wc-top"><div style="display:flex;align-items:center"><div class="wc-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M13.5 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-3.6 13.4l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5.3 5.3 0 0 1-3.7-1.6l-1-1a2 2 0 0 0-1.4-.6c-.2 0-.5 0-.7.1L7 9.9V14h2V11l1.8-.7-1.6 7.3-4.1-.9-.4 2 6.2 1.2z"/></svg></div><span class="wc-name">Свободная тренировка</span></div><span class="wc-date">${w.date.slice(5).replace('-','/')} ${w.time}</span></div><div class="wc-metrics"><div><span class="wc-mv">${w.km}</span><span class="wc-mu">км</span></div><div><span class="wc-mv">${w.kcal}</span><span class="wc-mu">ккал</span></div><div><span class="wc-mv">${w.min}</span><span class="wc-mu">мин</span></div></div></button>`).join('');
   }).join('');
+}
+
+function workoutSeconds(w){return Math.max(0, w.seconds || (w.min||0)*60);}
+function formatDuration(sec){const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=Math.floor(sec%60);return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+function formatPaceSeconds(sec){const total=Math.round(sec),m=Math.floor(total/60),s=total%60;return`${String(m).padStart(2,'0')}'${String(s).padStart(2,'0')}"`;}
+function formatPace(w){const sec=workoutSeconds(w);if(!w.km||!sec)return'--';return formatPaceSeconds(sec/w.km);}
+function formatSpeed(w){const sec=workoutSeconds(w);if(!w.km||!sec)return'--';return(w.km/(sec/3600)).toFixed(1);}
+function formatCadence(w){const min=workoutSeconds(w)/60;if(!w.steps||!min)return'--';return Math.round(w.steps/min);}
+function showWorkoutDetail(id){
+  const workout=workouts.find(w=>w.id===id);
+  if(!workout){showToast('Тренировка не найдена');return;}
+  renderWorkoutDetail(workout);
+  showScreen('detail');
+}
+function renderWorkoutDetail(w){
+  const pace=formatPace(w), speed=formatSpeed(w), cadence=formatCadence(w), seconds=workoutSeconds(w);
+  const topSpeed=w.maxSpeed ? Number(w.maxSpeed).toFixed(1) : speed;
+  const fastestPace=w.maxSpeed ? formatPaceSeconds(60/w.maxSpeed*60) : pace;
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detail-head">
+      <div class="detail-kicker">Workout</div>
+      <div class="detail-date">${w.date} ${w.time||''}</div>
+      <div class="detail-workout">Свободная тренировка</div>
+      <div class="detail-distance"><strong>${Number(w.km||0).toFixed(2)}</strong><span>km</span></div>
+    </div>
+    <div class="detail-card" id="detailSummary">
+      <div class="detail-summary-grid">
+        <div><div class="detail-label">Calories(kcal)</div><div class="detail-value">${Math.round(w.kcal||0)}</div></div>
+        <div><div class="detail-label">Time</div><div class="detail-value">${formatDuration(seconds)}</div></div>
+        <div><div class="detail-label">Steps(steps)</div><div class="detail-value">${Math.round(w.steps||0)}</div></div>
+        <div><div class="detail-label">Average Pace</div><div class="detail-value">${pace}</div></div>
+        <div><div class="detail-label">Average Speed(kph)</div><div class="detail-value">${speed}</div></div>
+        <div><div class="detail-label">Average Cadence(spm)</div><div class="detail-value">${cadence}</div></div>
+      </div>
+    </div>
+    <div class="detail-card" id="detailPaceCard">
+      <div class="detail-section-title"><span class="detail-section-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke="currentColor" stroke-width="2.5"/></svg></span>Pace</div>
+      <div class="detail-two-grid">
+        <div><div class="detail-label">Average Pace</div><div class="detail-value">${pace}</div></div>
+        <div><div class="detail-label">Fastest pace</div><div class="detail-value">${fastestPace}</div></div>
+      </div>
+      <div class="detail-bars">
+        <div class="detail-bar-label">Pace</div>
+        <div class="detail-bar-row"><div class="detail-bar-fill" style="width:70%">${fastestPace}</div><div class="detail-bar-tag">Fastest</div></div>
+        <div class="detail-bar-row"><div class="detail-bar-fill" style="width:74%">${pace}</div><div class="detail-bar-tag">Average</div></div>
+      </div>
+    </div>
+    <div class="detail-card" id="detailSpeedCard">
+      <div class="detail-section-title speed"><span class="detail-section-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 13V7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke="currentColor" stroke-width="2.5"/></svg></span>Speed</div>
+      <div class="detail-two-grid">
+        <div><div class="detail-label">Average Speed</div><div class="detail-value">${speed}<small>km/h</small></div></div>
+        <div><div class="detail-label">Top speed</div><div class="detail-value">${topSpeed}<small>km/h</small></div></div>
+      </div>
+    </div>`;
 }
 
 // ══ TOAST ══════════════════════════════════
