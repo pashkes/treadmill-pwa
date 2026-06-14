@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
@@ -10,7 +11,7 @@ import { useLiveStore } from '../live/live-store';
 import { TreadmillArt } from '../../ui/TreadmillArt';
 
 export function HomeScreen() {
-  const showScreen = useAppStore((state) => state.showScreen);
+  const navigate = useNavigate();
   const [today, setToday] = useState(todayString);
   const workouts = useLiveQuery(() => db.workouts.where('date').equals(today).toArray(), [today]) ?? [];
   const summary = summarizeWorkouts(workouts);
@@ -79,7 +80,7 @@ export function HomeScreen() {
               showToast('Сначала подключите дорожку');
               return;
             }
-            showScreen('live');
+            void navigate({ to: '/live' });
           }}
         >
           GO

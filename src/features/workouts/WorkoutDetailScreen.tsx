@@ -1,5 +1,6 @@
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
@@ -7,8 +8,8 @@ import { deleteWorkout } from '../../db/workout-repository';
 import { formatCadence, formatDuration, formatPace, formatPaceSeconds, formatSpeed, workoutSeconds } from '../../domain/workout';
 
 export function WorkoutDetailScreen() {
+  const navigate = useNavigate();
   const selectedWorkoutId = useAppStore((state) => state.selectedWorkoutId);
-  const showScreen = useAppStore((state) => state.showScreen);
   const showToast = useAppStore((state) => state.showToast);
   const workout = useLiveQuery(() => (selectedWorkoutId ? db.workouts.get(selectedWorkoutId) : undefined), [selectedWorkoutId]);
 
@@ -18,7 +19,7 @@ export function WorkoutDetailScreen() {
         <button
           type="button"
           className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-neutral-900"
-          onClick={() => showScreen('history')}
+          onClick={() => void navigate({ to: '/history' })}
           aria-label="Назад"
         >
           <ChevronLeft size={24} />
@@ -41,7 +42,7 @@ export function WorkoutDetailScreen() {
 
     await deleteWorkout(workoutId);
     showToast('Тренировка удалена');
-    showScreen('history');
+    void navigate({ to: '/history' });
   }
 
   return (
@@ -50,7 +51,7 @@ export function WorkoutDetailScreen() {
         <button
           type="button"
           className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-neutral-900"
-          onClick={() => showScreen('history')}
+          onClick={() => void navigate({ to: '/history' })}
           aria-label="Назад"
         >
           <ChevronLeft size={24} />

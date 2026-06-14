@@ -1,11 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { RouterProvider } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { router } from '../../app/router';
 import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
 import { addWorkout, getWorkout } from '../../db/workout-repository';
 import type { Workout } from '../../domain/workout';
-import { WorkoutDetailScreen } from './WorkoutDetailScreen';
 
 const workout: Workout = {
   id: 100,
@@ -21,6 +22,7 @@ const workout: Workout = {
 
 describe('WorkoutDetailScreen', () => {
   beforeEach(async () => {
+    await router.navigate({ to: '/workouts/$workoutId', params: { workoutId: String(workout.id) } });
     localStorage.clear();
     vi.restoreAllMocks();
     await db.workouts.clear();
@@ -35,7 +37,7 @@ describe('WorkoutDetailScreen', () => {
 
   it('deletes the saved workout after confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    render(<WorkoutDetailScreen />);
+    render(<RouterProvider router={router} />);
 
     await screen.findByText('Свободная тренировка');
     await userEvent.click(screen.getByRole('button', { name: 'Удалить тренировку' }));
@@ -43,18 +45,18 @@ describe('WorkoutDetailScreen', () => {
     await waitFor(async () => {
       expect(await getWorkout(workout.id)).toBeUndefined();
     });
-    expect(useAppStore.getState().screen).toBe('history');
+    expect(router.state.location.pathname).toBe('/history');
     expect(useAppStore.getState().toast.message).toBe('Тренировка удалена');
   });
 
   it('keeps the saved workout when deletion is cancelled', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
-    render(<WorkoutDetailScreen />);
+    render(<RouterProvider router={router} />);
 
     await screen.findByText('Свободная тренировка');
     await userEvent.click(screen.getByRole('button', { name: 'Удалить тренировку' }));
 
     expect(await getWorkout(workout.id)).toEqual(workout);
-    expect(useAppStore.getState().screen).toBe('detail');
+    expect(router.state.location.pathname).toBe('/workouts/100');
   });
 });

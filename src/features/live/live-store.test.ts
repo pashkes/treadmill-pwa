@@ -28,7 +28,7 @@ describe('live-store', () => {
   it('saves workouts shorter than thirty seconds when they have elapsed time', async () => {
     useLiveStore.getState().setConnection(true, 'Blue treadmill');
     useLiveStore.getState().start();
-    useLiveStore.getState().setTreadmillData({ elapsedSeconds: 1 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 1, elapsedSeconds: 1 });
 
     const saved = await useLiveStore.getState().stopAndSave();
 
@@ -137,6 +137,19 @@ describe('live-store', () => {
     expect(useLiveStore.getState().km).toBe(0.4);
     expect(useLiveStore.getState().kcal).toBe(38);
     expect(useLiveStore.getState().inclinePercent).toBe(2);
+  });
+
+  it('accumulates distance from speed when the treadmill always reports distanceKm=0', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+    // Treadmill sends distanceKm=0 (common firmware behaviour), elapsedSeconds counts up
+    useLiveStore.getState().setTreadmillData({ speedKph: 3, distanceKm: 0, elapsedSeconds: 1 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 3, distanceKm: 0, elapsedSeconds: 2 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 3, distanceKm: 0, elapsedSeconds: 3 });
+
+    // 3 seconds at 3 km/h = 3 * (3/3600) ≈ 0.0025 km
+    expect(useLiveStore.getState().km).toBeCloseTo(0.0025, 4);
+    expect(useLiveStore.getState().steps).toBeGreaterThan(0);
   });
 
   it('requests automatic stop after the treadmill reports zero speed following movement', () => {

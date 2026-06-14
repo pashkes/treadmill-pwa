@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '../../app/app-store';
 import { formatDuration, formatPace } from '../../domain/workout';
 import { useLiveStore } from './live-store';
 
 export function LiveScreen() {
-  const showScreen = useAppStore((state) => state.showScreen);
+  const navigate = useNavigate();
   const showToast = useAppStore((state) => state.showToast);
   const { deviceName, seconds, km, kcal, steps, speedKph, inclinePercent, autoStopRequested, clearAutoStopRequest, stopAndSave } =
     useLiveStore();
@@ -17,7 +18,7 @@ export function LiveScreen() {
 
     const saved = await stopAndSave();
     if (saved) showToast('Тренировка сохранена');
-    showScreen('home');
+    void navigate({ to: '/' });
   }
 
   useEffect(() => {
@@ -26,9 +27,9 @@ export function LiveScreen() {
     clearAutoStopRequest();
     void stopAndSave().then((saved) => {
       if (saved) showToast('Тренировка завершена');
-      showScreen('home');
+      void navigate({ to: '/' });
     });
-  }, [autoStopRequested, clearAutoStopRequest, showScreen, showToast, stopAndSave]);
+  }, [autoStopRequested, clearAutoStopRequest, navigate, showToast, stopAndSave]);
 
   return (
     <main className="min-h-dvh bg-black pb-8 pt-[calc(env(safe-area-inset-top)+12px)] text-white">

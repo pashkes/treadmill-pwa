@@ -1,12 +1,12 @@
+import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
 import { formatMonthLabel } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
 
 export function HistoryScreen() {
+  const navigate = useNavigate();
   const workouts = useLiveQuery(() => db.workouts.orderBy('date').reverse().toArray(), []) ?? [];
-  const showWorkoutDetail = useAppStore((state) => state.showWorkoutDetail);
 
   if (workouts.length === 0) {
     return (
@@ -41,7 +41,7 @@ export function HistoryScreen() {
                 key={workout.id}
                 type="button"
                 className="mx-4 mb-2.5 block w-[calc(100%-32px)] rounded-[18px] bg-neutral-900 px-4 py-3.5 text-left text-white"
-                onClick={() => showWorkoutDetail(workout.id)}
+                onClick={() => void navigate({ to: '/workouts/$workoutId', params: { workoutId: String(workout.id) } })}
               >
                 <div className="mb-2.5 flex items-center justify-between">
                   <span className="text-[15px] font-bold">Свободная тренировка</span>
