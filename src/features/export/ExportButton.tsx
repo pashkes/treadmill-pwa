@@ -1,8 +1,28 @@
 import { Download } from 'lucide-react';
+import { useAppStore } from '../../app/app-store';
+import { exportWorkouts } from '../../db/workout-repository';
+import { createExportFile, downloadJsonFile } from './export-download';
 
 export function ExportButton() {
+  const showToast = useAppStore((state) => state.showToast);
+
   return (
-    <button type="button" aria-label="Экспорт тренировок" className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-900 text-white">
+    <button
+      type="button"
+      aria-label="Экспорт тренировок"
+      className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-900 text-white"
+      onClick={async () => {
+        try {
+          const workouts = await exportWorkouts();
+          const file = createExportFile(workouts);
+          downloadJsonFile(file.fileName, file.content);
+          showToast('Экспорт готов');
+        } catch (error) {
+          console.error(error);
+          showToast('Не удалось экспортировать тренировки');
+        }
+      }}
+    >
       <Download size={20} />
     </button>
   );
