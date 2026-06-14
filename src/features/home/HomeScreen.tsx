@@ -25,6 +25,7 @@ export function HomeScreen() {
   const setFtmsConnection = useLiveStore((state) => state.setFtmsConnection);
   const setTreadmillData = useLiveStore((state) => state.setTreadmillData);
   const showToast = useAppStore((state) => state.showToast);
+  const hideToast = useAppStore((state) => state.hideToast);
 
   useEffect(() => {
     const timer = window.setInterval(() => setToday(todayString()), 60_000);
@@ -53,7 +54,7 @@ export function HomeScreen() {
       );
       setFtmsConnection(connection);
       setConnection(true, connection.deviceName);
-      showToast(connection.deviceName);
+      showToast(t.home.connected);
     } catch (error) {
       setConnection(false, null);
       showToast(error instanceof Error ? error.message : t.home.disconnectedToast);
@@ -84,6 +85,7 @@ export function HomeScreen() {
               showToast(t.home.connectFirst);
               return;
             }
+            hideToast();
             void navigate({ to: '/live' });
           }}
         >
