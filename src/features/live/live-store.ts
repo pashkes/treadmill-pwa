@@ -111,6 +111,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
   setTreadmillData: (data) =>
     set((state) => {
+      console.log('[store] setTreadmillData', data);
       const speedKph = data.speedKph ?? state.speedKph;
       const km = data.distanceKm ?? state.km;
       const steps = data.steps ?? (data.distanceKm === undefined ? state.steps : estimateSteps(data.distanceKm));
@@ -166,6 +167,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     };
     set(nextState);
     persistActiveWorkout({ ...get(), ...nextState });
+    void get().ftmsConnection?.startWorkout();
     return true;
   },
   tick: () => undefined,
@@ -180,6 +182,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     }),
   stopAndSave: async () => {
     const state = get();
+    console.log('[store] stopAndSave called, ftmsConnection=', !!state.ftmsConnection);
     if (state.ftmsConnection) void state.ftmsConnection.stopWorkout();
     const workout: Workout = {
       id: Date.now(),

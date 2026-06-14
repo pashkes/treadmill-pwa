@@ -89,52 +89,91 @@ export async function connectFtms(onData: (data: TreadmillData) => void, onDisco
   const server = await device.gatt?.connect();
   if (!server) throw new Error('Не удалось подключиться к дорожке');
 
+  console.log('[FTMS] getting primary service...');
   const service = await server.getPrimaryService(FTMS_SERVICE);
+
+  console.log('[FTMS] subscribing to treadmill data notifications...');
   const treadmillData = await service.getCharacteristic(TREADMILL_DATA_CHARACTERISTIC);
   await treadmillData.startNotifications();
+  console.log('[FTMS] treadmill data notifications active');
+
+  let packetCount = 0;
   treadmillData.addEventListener('characteristicvaluechanged', (event: Event) => {
     const value = (event as GattCharacteristicEvent).target.value;
-    if (value) onData(parseTreadmillData(value));
+    if (!value) return;
+    packetCount++;
+    const raw = Array.from(new Uint8Array(value.buffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join(' ');
+    const parsed = parseTreadmillData(value);
+    console.log(`[FTMS] packet #${packetCount} raw=[${raw}]`, parsed);
+    onData(parsed);
   });
 
   // Take control of the fitness machine so it doesn't drop the session after a few seconds.
   // Some treadmills don't expose FMCP, so errors here are non-fatal.
   let controlPoint: BluetoothRemoteGATTCharacteristic | null = null;
   try {
+    console.log('[FTMS] getting control point characteristic...');
     controlPoint = await service.getCharacteristic(FITNESS_MACHINE_CONTROL_POINT);
+
+    controlPoint.addEventListener('characteristicvaluechanged', (event: Event) => {
+      const value = (event as GattCharacteristicEvent).target.value;
+      if (!value) return;
+      const raw = Array.from(new Uint8Array(value.buffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join(' ');
+      // Response format: 0x80 <echo of sent opcode> <result: 0x01=success, 0x02=not supported, 0x03=invalid param, 0x04=failed, 0x05=not permitted>
+      const responseOpcode = value.byteLength > 1 ? value.getUint8(1) : '?';
+      const resultCode = value.byteLength > 2 ? value.getUint8(2) : '?';
+      const resultName: Record<number, string> = { 1: 'SUCCESS', 2: 'NOT_SUPPORTED', 3: 'INVALID_PARAM', 4: 'FAILED', 5: 'NOT_PERMITTED' };
+      console.log(`[FTMS] control point response raw=[${raw}] opcode=0x${responseOpcode.toString(16)} result=${resultName[resultCode as number] ?? resultCode}`);
+    });
+
     await controlPoint.startNotifications();
+    console.log('[FTMS] sending Request Control (0x00)...');
     await controlPoint.writeValueWithoutResponse(new Uint8Array([OP_REQUEST_CONTROL]));
-  } catch {
+    console.log('[FTMS] Request Control sent');
+  } catch (err) {
+    console.warn('[FTMS] control point not available or Request Control failed:', err);
     controlPoint = null;
   }
 
   async function writeControlPoint(data: Uint8Array): Promise<void> {
-    if (!controlPoint) return;
+    if (!controlPoint) {
+      console.warn('[FTMS] writeControlPoint: no control point available');
+      return;
+    }
+    const hex = Array.from(data).map((b) => b.toString(16).padStart(2, '0')).join(' ');
+    console.log(`[FTMS] writeControlPoint: [${hex}]`);
     try {
       await controlPoint.writeValueWithoutResponse(data);
-    } catch {
-      // Ignore — treadmill may reject commands it doesn't support.
+    } catch (err) {
+      console.warn('[FTMS] writeControlPoint failed:', err);
     }
   }
 
   return {
     deviceName: device.name || 'Дорожка',
-    startWorkout: () => writeControlPoint(new Uint8Array([OP_START_RESUME])),
-    stopWorkout: () => writeControlPoint(new Uint8Array([OP_STOP_PAUSE, 0x01])),
+    startWorkout: () => {
+      console.log('[FTMS] startWorkout → sending Start/Resume (0x07)');
+      return writeControlPoint(new Uint8Array([OP_START_RESUME]));
+    },
+    stopWorkout: () => {
+      console.log('[FTMS] stopWorkout → sending Stop (0x08 0x01)');
+      return writeControlPoint(new Uint8Array([OP_STOP_PAUSE, 0x01]));
+    },
     writeSpeed: async (speedKph: number) => {
       const buffer = new ArrayBuffer(3);
       const view = new DataView(buffer);
-      view.setUint8(0, 0x02); // Set Target Speed opcode
+      view.setUint8(0, 0x02);
       view.setUint16(1, Math.round(speedKph * 100), true);
       await writeControlPoint(new Uint8Array(buffer));
     },
     disconnect: () => {
-      try {
-        void treadmillData.stopNotifications();
-        if (controlPoint) void controlPoint.stopNotifications();
-      } catch {
-        // Ignore disconnect cleanup races.
-      }
+      console.log('[FTMS] disconnect called');
+      treadmillData.stopNotifications().catch(() => {});
+      controlPoint?.stopNotifications().catch(() => {});
       if (device.gatt?.connected) device.gatt.disconnect();
       device.removeEventListener('gattserverdisconnected', onDisconnect);
     },
