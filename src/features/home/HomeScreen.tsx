@@ -9,8 +9,10 @@ import { connectFtms } from '../bluetooth/ftms';
 import { ExportButton } from '../export/ExportButton';
 import { useLiveStore } from '../live/live-store';
 import { TreadmillArt } from '../../ui/TreadmillArt';
+import { useT } from '../../i18n';
 
 export function HomeScreen() {
+  const t = useT();
   const navigate = useNavigate();
   const [today, setToday] = useState(todayString);
   const workouts = useLiveQuery(() => db.workouts.where('date').equals(today).toArray(), [today]) ?? [];
@@ -34,7 +36,7 @@ export function HomeScreen() {
       ftmsConnection?.disconnect();
       setFtmsConnection(null);
       setConnection(false, null);
-      showToast('Отключено');
+      showToast(t.home.disconnectedToast);
       return;
     }
 
@@ -46,7 +48,7 @@ export function HomeScreen() {
         () => {
           setFtmsConnection(null);
           setConnection(false, null);
-          showToast('Отключилась');
+          showToast(t.home.disconnectedToast);
         },
       );
       setFtmsConnection(connection);
@@ -54,14 +56,16 @@ export function HomeScreen() {
       showToast(connection.deviceName);
     } catch (error) {
       setConnection(false, null);
-      showToast(error instanceof Error ? error.message : 'Ошибка подключения');
+      showToast(error instanceof Error ? error.message : t.home.disconnectedToast);
     }
   }
+
+  const locale = useAppStore((state) => state.locale);
 
   return (
     <main className="min-h-dvh pb-24">
       <header className="flex items-center justify-between px-4 pt-14">
-        <h1 className="text-[28px] font-extrabold tracking-normal">Workout</h1>
+        <h1 className="text-[28px] font-extrabold tracking-normal">{t.home.title}</h1>
         <ExportButton />
       </header>
       <div className="mx-4 mt-2 flex h-[200px] items-center justify-center">
@@ -77,7 +81,7 @@ export function HomeScreen() {
           onClick={() => {
             const started = start();
             if (!started) {
-              showToast('Сначала подключите дорожку');
+              showToast(t.home.connectFirst);
               return;
             }
             void navigate({ to: '/live' });
@@ -88,27 +92,27 @@ export function HomeScreen() {
         <div className="flex items-center justify-between rounded-[14px] bg-neutral-800 px-3 py-2.5">
           <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">
             <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_#30D158]' : 'bg-red-500'}`} />
-            <span className="truncate">{isConnected ? (deviceName ?? 'Подключено') : 'Дорожка не подключена...'}</span>
+            <span className="truncate">{isConnected ? (deviceName ?? t.home.connected) : t.home.disconnected}</span>
           </div>
           <button
             type="button"
             className={`rounded-full px-4 py-2 text-[13px] font-bold text-white ${isConnected ? 'border border-neutral-700 bg-neutral-900 text-neutral-400' : 'bg-[#5B5BF6]'}`}
             onClick={() => void toggleConnect()}
           >
-            {isConnected ? 'Отключить' : 'Подключить'}
+            {isConnected ? t.home.disconnect : t.home.connect}
           </button>
         </div>
       </section>
       <section className="mx-4 mt-2 grid grid-cols-2 gap-2.5">
-        <Metric label="Калории сегодня" value={summary.kcal.toLocaleString('ru')} unit="ккал" color="text-[#5B8AF6]" />
-        <Metric label="Дистанция сегодня" value={summary.km.toFixed(2)} unit="км" color="text-[#5B8AF6]" />
+        <Metric label={t.home.caloriesToday} value={summary.kcal.toLocaleString(locale)} unit={t.units.kcal} color="text-[#5B8AF6]" />
+        <Metric label={t.home.distanceToday} value={summary.km.toFixed(2)} unit={t.units.km} color="text-[#5B8AF6]" />
       </section>
       <section className="mx-4 mt-2 rounded-2xl bg-neutral-900 p-3.5">
         <div className="flex items-center justify-between">
-          <div className="text-xs font-semibold text-[#F06A1D]">Шаги</div>
+          <div className="text-xs font-semibold text-[#F06A1D]">{t.home.steps}</div>
           <div>
-            <span className="text-[26px] font-extrabold">{summary.steps.toLocaleString('ru')}</span>
-            <span className="ml-1 text-xs text-neutral-400">шаги</span>
+            <span className="text-[26px] font-extrabold">{summary.steps.toLocaleString(locale)}</span>
+            <span className="ml-1 text-xs text-neutral-400">{t.units.steps}</span>
           </div>
         </div>
       </section>

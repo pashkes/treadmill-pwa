@@ -1,16 +1,18 @@
 import { BarChart3, History, Home } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAppStore, type ScreenName } from '../app/app-store';
-
-const tabs: Array<{ screen: ScreenName; label: string; Icon: typeof Home; path: string }> = [
-  { screen: 'home', label: 'Home', Icon: Home, path: '/' },
-  { screen: 'stats', label: 'Stats', Icon: BarChart3, path: '/stats' },
-  { screen: 'history', label: 'History', Icon: History, path: '/history' },
-];
+import { useT } from '../i18n';
 
 export function TabBar() {
+  const t = useT();
   const screen = useAppStore((state) => state.screen);
   const navigate = useNavigate();
+
+  const tabs: Array<{ screen: ScreenName; label: string; Icon: typeof Home; path: string }> = [
+    { screen: 'home', label: t.nav.home, Icon: Home, path: '/' },
+    { screen: 'stats', label: t.nav.stats, Icon: BarChart3, path: '/stats' },
+    { screen: 'history', label: t.nav.history, Icon: History, path: '/history' },
+  ];
 
   if (screen === 'live' || screen === 'detail') return null;
 
