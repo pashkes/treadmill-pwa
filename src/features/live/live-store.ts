@@ -20,8 +20,8 @@ type LiveState = {
   setConnection: (isConnected: boolean, deviceName: string | null) => void;
   setFtmsConnection: (connection: FtmsConnection | null) => void;
   setSpeed: (speedKph: number) => void;
-  setTreadmillData: (speedKph: number, distanceKm?: number) => void;
-  start: () => void;
+  setTreadmillData: (speedKph?: number, distanceKm?: number) => void;
+  start: () => boolean;
   tick: () => void;
   pause: () => void;
   changeSpeed: (delta: number) => void;
@@ -45,13 +45,20 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   setFtmsConnection: (ftmsConnection) => set({ ftmsConnection }),
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
   setTreadmillData: (speedKph, distanceKm) =>
-    set((state) => ({
-      speedKph,
-      maxSpeed: Math.max(state.maxSpeed, speedKph),
-      km: distanceKm ?? state.km,
-      kcal: (distanceKm ?? state.km) * 65,
-    })),
-  start: () =>
+    set((state) => {
+      const nextSpeedKph = speedKph ?? state.speedKph;
+      const nextKm = distanceKm ?? state.km;
+
+      return {
+        speedKph: nextSpeedKph,
+        maxSpeed: speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, speedKph),
+        km: nextKm,
+        kcal: nextKm * 65,
+      };
+    }),
+  start: () => {
+    if (!get().isConnected) return false;
+
     set({
       isPaused: false,
       startedDate: todayString(),
@@ -62,18 +69,18 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       km: 0,
       kcal: 0,
       steps: 0,
-    }),
+    });
+    return true;
+  },
   tick: () =>
     set((state) => {
-      if (state.isPaused) return state;
-      const simulatedSpeed = state.isConnected ? state.speedKph : Math.min(5 + Math.sin((state.seconds + 1) / 25) * 2, 12);
-      const km = state.km + simulatedSpeed / 3600;
+      if (state.isPaused || !state.isConnected) return state;
+      const km = state.km + state.speedKph / 3600;
       return {
         seconds: state.seconds + 1,
-        speedKph: simulatedSpeed,
-        maxSpeed: Math.max(state.maxSpeed, simulatedSpeed),
+        maxSpeed: Math.max(state.maxSpeed, state.speedKph),
         km,
-        steps: state.steps + Math.round(simulatedSpeed * 1.4),
+        steps: state.steps + Math.round(state.speedKph * 1.4),
         kcal: km * 65,
       };
     }),

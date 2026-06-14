@@ -22,6 +22,7 @@ describe('live-store', () => {
   });
 
   it('saves workouts shorter than thirty seconds when they have elapsed time', async () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
     useLiveStore.getState().start();
     useLiveStore.getState().tick();
 
@@ -29,6 +30,31 @@ describe('live-store', () => {
 
     expect(saved?.seconds).toBe(1);
     expect(await db.workouts.count()).toBe(1);
+  });
+
+  it('does not start a workout before the treadmill is connected', () => {
+    const started = useLiveStore.getState().start();
+
+    expect(started).toBe(false);
+    expect(useLiveStore.getState().startedAt).toBeNull();
+    expect(useLiveStore.getState().seconds).toBe(0);
+  });
+
+  it('starts a workout when the treadmill is connected', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+
+    const started = useLiveStore.getState().start();
+
+    expect(started).toBe(true);
+    expect(useLiveStore.getState().startedAt).not.toBeNull();
+  });
+
+  it('does not advance live metrics while disconnected', () => {
+    useLiveStore.getState().tick();
+
+    expect(useLiveStore.getState().seconds).toBe(0);
+    expect(useLiveStore.getState().km).toBe(0);
+    expect(useLiveStore.getState().steps).toBe(0);
   });
 
   it('saves workout date from start time instead of stop time', async () => {
@@ -50,6 +76,16 @@ describe('live-store', () => {
 
   it('uses treadmill-reported distance when available', () => {
     useLiveStore.getState().setTreadmillData(6, 1.25);
+
+    expect(useLiveStore.getState().speedKph).toBe(6);
+    expect(useLiveStore.getState().km).toBe(1.25);
+    expect(useLiveStore.getState().kcal).toBe(81.25);
+  });
+
+  it('keeps the last live metrics when a treadmill packet omits speed and distance', () => {
+    useLiveStore.getState().setTreadmillData(6, 1.25);
+
+    useLiveStore.getState().setTreadmillData();
 
     expect(useLiveStore.getState().speedKph).toBe(6);
     expect(useLiveStore.getState().km).toBe(1.25);

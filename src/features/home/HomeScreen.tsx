@@ -69,9 +69,16 @@ export function HomeScreen() {
       <section className="mx-4 rounded-[20px] bg-neutral-900 px-4 pb-4 pt-5">
         <button
           type="button"
-          className="mx-auto mb-4 block h-[90px] w-[90px] rounded-full bg-white text-[22px] font-black text-black"
+          className={`mx-auto mb-4 block h-[90px] w-[90px] rounded-full text-[22px] font-black ${
+            isConnected ? 'bg-white text-black' : 'bg-neutral-800 text-neutral-500'
+          }`}
+          disabled={!isConnected}
           onClick={() => {
-            start();
+            const started = start();
+            if (!started) {
+              showToast('Сначала подключите дорожку');
+              return;
+            }
             showScreen('live');
           }}
         >

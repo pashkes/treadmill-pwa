@@ -17,4 +17,10 @@ describe('parseTreadmillData', () => {
 
     expect(data).toEqual({ speedKph: 6, distanceKm: 2 });
   });
+
+  it('omits speed when the treadmill packet does not include instantaneous speed', () => {
+    const data = parseTreadmillData(view([0x01, 0x00]));
+
+    expect(data).toEqual({});
+  });
 });
