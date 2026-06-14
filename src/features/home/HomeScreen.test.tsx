@@ -6,6 +6,7 @@ import { router } from '../../app/router';
 import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
 import { useLiveStore } from '../live/live-store';
+import { connectFtms } from '../bluetooth/ftms';
 
 vi.mock('../bluetooth/ftms', () => ({
   connectFtms: vi.fn(),
@@ -50,11 +51,29 @@ describe('HomeScreen', () => {
 
   it('starts a live workout after the treadmill is connected', async () => {
     useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useAppStore.getState().showToast('Blue treadmill');
     render(<RouterProvider router={router} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'GO' }));
 
     expect(router.state.location.pathname).toBe('/live');
     expect(useLiveStore.getState().startedAt).not.toBeNull();
+    expect(useAppStore.getState().toast.visible).toBe(false);
+  });
+
+  it('shows a generic connected toast instead of duplicating the treadmill model', async () => {
+    vi.mocked(connectFtms).mockResolvedValue({
+      deviceName: 'SW7130EA-0227',
+      startWorkout: vi.fn(),
+      stopWorkout: vi.fn(),
+      writeSpeed: vi.fn(),
+      disconnect: vi.fn(),
+    });
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Подключить' }));
+
+    expect(useLiveStore.getState().deviceName).toBe('SW7130EA-0227');
+    expect(useAppStore.getState().toast).toEqual({ message: 'Подключено', visible: true });
   });
 });
