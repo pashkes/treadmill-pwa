@@ -80,7 +80,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       steps: Math.round(state.steps),
       maxSpeed: Math.round(state.maxSpeed * 10) / 10,
     };
-    if (workout.min <= 0) return null;
+    if (workout.seconds <= 0) return null;
     await addWorkout(workout);
     return workout;
   },
