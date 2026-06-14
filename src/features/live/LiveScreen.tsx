@@ -4,9 +4,11 @@ import { useAppStore } from '../../app/app-store';
 import { formatDuration, formatPace } from '../../domain/workout';
 import { useLiveStore } from './live-store';
 import { useT } from '../../i18n';
+import { useScreenWakeLock } from './use-screen-wake-lock';
 
 export function LiveScreen() {
   const t = useT();
+  useScreenWakeLock();
   const locale = useAppStore((state) => state.locale);
   const navigate = useNavigate();
   const showToast = useAppStore((state) => state.showToast);

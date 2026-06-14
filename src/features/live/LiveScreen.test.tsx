@@ -75,4 +75,26 @@ describe('LiveScreen', () => {
     expect(confirm).not.toHaveBeenCalled();
     expect(router.state.location.pathname).toBe('/');
   });
+
+  it('keeps the screen awake while the live screen is open', async () => {
+    const release = vi.fn().mockResolvedValue(undefined);
+    const sentinel = Object.assign(new EventTarget(), { release });
+    const request = vi.fn().mockResolvedValue(sentinel);
+    Object.defineProperty(navigator, 'wakeLock', {
+      value: { request },
+      configurable: true,
+    });
+
+    const view = render(<RouterProvider router={router} />);
+
+    await waitFor(() => {
+      expect(request).toHaveBeenCalledWith('screen');
+    });
+
+    view.unmount();
+
+    await waitFor(() => {
+      expect(release).toHaveBeenCalled();
+    });
+  });
 });

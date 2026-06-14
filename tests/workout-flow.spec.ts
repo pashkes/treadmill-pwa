@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use({ locale: 'ru-RU' });
+
 test('records a connected treadmill workout and opens its detail screen', async ({ page }) => {
   await page.addInitScript(() => {
     let treadmillDataListener: ((event: Event) => void) | null = null;
@@ -62,7 +64,7 @@ test('records a connected treadmill workout and opens its detail screen', async 
 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Завершить тренировку' }).click();
-  await page.getByRole('button', { name: 'History' }).click();
+  await page.getByRole('button', { name: 'История' }).click();
   await page.getByRole('button', { name: 'Свободная тренировка' }).click();
-  await expect(page.getByText('Speed', { exact: true })).toBeVisible();
+  await expect(page.getByText('Скорость', { exact: true })).toBeVisible();
 });
