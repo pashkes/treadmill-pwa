@@ -18,7 +18,11 @@ describe('live-store', () => {
       km: 0,
       kcal: 0,
       steps: 0,
+      inclinePercent: 0,
+      hasStartedMoving: false,
+      autoStopRequested: false,
     });
+    window.localStorage.clear();
   });
 
   it('saves workouts shorter than thirty seconds when they have elapsed time', async () => {
@@ -80,12 +84,14 @@ describe('live-store', () => {
   });
 
   it('uses treadmill-reported metrics when available', () => {
-    useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 1.25, kcal: 80, elapsedSeconds: 120 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 1.25, kcal: 80, elapsedSeconds: 120, inclinePercent: 3 });
 
     expect(useLiveStore.getState().speedKph).toBe(6);
     expect(useLiveStore.getState().km).toBe(1.25);
     expect(useLiveStore.getState().kcal).toBe(80);
     expect(useLiveStore.getState().seconds).toBe(120);
+    expect(useLiveStore.getState().steps).toBe(1600);
+    expect(useLiveStore.getState().inclinePercent).toBe(3);
   });
 
   it('keeps previous values when a treadmill packet omits fields', () => {
@@ -97,5 +103,49 @@ describe('live-store', () => {
     expect(useLiveStore.getState().km).toBe(1.25);
     expect(useLiveStore.getState().kcal).toBe(80);
     expect(useLiveStore.getState().seconds).toBe(120);
+  });
+
+  it('persists active workout metrics for refresh recovery without persisting bluetooth connection', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 0.4, kcal: 38, elapsedSeconds: 278, inclinePercent: 2 });
+
+    useLiveStore.setState({
+      isConnected: false,
+      deviceName: null,
+      isPaused: false,
+      startedDate: null,
+      startedAt: null,
+      ftmsConnection: null,
+      seconds: 0,
+      speedKph: 0,
+      maxSpeed: 0,
+      km: 0,
+      kcal: 0,
+      steps: 0,
+      inclinePercent: 0,
+      hasStartedMoving: false,
+      autoStopRequested: false,
+    });
+
+    const restored = useLiveStore.getState().restoreActiveWorkout();
+
+    expect(restored).toBe(true);
+    expect(useLiveStore.getState().isConnected).toBe(false);
+    expect(useLiveStore.getState().deviceName).toBe('Blue treadmill');
+    expect(useLiveStore.getState().seconds).toBe(278);
+    expect(useLiveStore.getState().km).toBe(0.4);
+    expect(useLiveStore.getState().kcal).toBe(38);
+    expect(useLiveStore.getState().inclinePercent).toBe(2);
+  });
+
+  it('requests automatic stop after the treadmill reports zero speed following movement', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 20 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 0, elapsedSeconds: 21 });
+
+    expect(useLiveStore.getState().autoStopRequested).toBe(true);
   });
 });

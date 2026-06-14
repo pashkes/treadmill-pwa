@@ -24,6 +24,12 @@ describe('parseTreadmillData', () => {
     expect(data).toEqual({ speedKph: 6, distanceKm: 1, kcal: 42, elapsedSeconds: 125 });
   });
 
+  it('parses treadmill inclination when the packet includes angle data', () => {
+    const data = parseTreadmillData(view([0x0c, 0x00, 0x58, 0x02, 0xe8, 0x03, 0x00, 0x1f, 0x00, 0x1f, 0x00]));
+
+    expect(data).toEqual({ speedKph: 6, distanceKm: 1, inclinePercent: 3.1 });
+  });
+
   it('omits speed when the treadmill packet does not include instantaneous speed', () => {
     const data = parseTreadmillData(view([0x01, 0x00]));
 
