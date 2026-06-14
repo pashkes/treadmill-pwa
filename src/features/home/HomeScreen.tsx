@@ -3,6 +3,7 @@ import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
 import { todayString } from '../../domain/date-time';
 import { summarizeWorkouts } from '../../domain/stats';
+import { connectFtms } from '../bluetooth/ftms';
 import { ExportButton } from '../export/ExportButton';
 import { useLiveStore } from '../live/live-store';
 import { TreadmillArt } from '../../ui/TreadmillArt';
@@ -13,7 +14,41 @@ export function HomeScreen() {
   const summary = summarizeWorkouts(workouts);
   const isConnected = useLiveStore((state) => state.isConnected);
   const deviceName = useLiveStore((state) => state.deviceName);
+  const ftmsConnection = useLiveStore((state) => state.ftmsConnection);
   const start = useLiveStore((state) => state.start);
+  const setConnection = useLiveStore((state) => state.setConnection);
+  const setFtmsConnection = useLiveStore((state) => state.setFtmsConnection);
+  const setSpeed = useLiveStore((state) => state.setSpeed);
+  const showToast = useAppStore((state) => state.showToast);
+
+  async function toggleConnect() {
+    if (isConnected) {
+      ftmsConnection?.disconnect();
+      setFtmsConnection(null);
+      setConnection(false, null);
+      showToast('Отключено');
+      return;
+    }
+
+    try {
+      const connection = await connectFtms(
+        (data) => {
+          setSpeed(data.speedKph);
+        },
+        () => {
+          setFtmsConnection(null);
+          setConnection(false, null);
+          showToast('Отключилась');
+        },
+      );
+      setFtmsConnection(connection);
+      setConnection(true, connection.deviceName);
+      showToast(connection.deviceName);
+    } catch (error) {
+      setConnection(false, null);
+      showToast(error instanceof Error ? error.message : 'Ошибка подключения');
+    }
+  }
 
   return (
     <main className="min-h-dvh pb-24">
@@ -40,8 +75,12 @@ export function HomeScreen() {
             <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_#30D158]' : 'bg-red-500'}`} />
             <span className="truncate">{isConnected ? deviceName ?? 'Подключено' : 'Дорожка не подключена...'}</span>
           </div>
-          <button type="button" className="rounded-full bg-[#5B5BF6] px-4 py-2 text-[13px] font-bold text-white">
-            Подключить
+          <button
+            type="button"
+            className={`rounded-full px-4 py-2 text-[13px] font-bold text-white ${isConnected ? 'border border-neutral-700 bg-neutral-900 text-neutral-400' : 'bg-[#5B5BF6]'}`}
+            onClick={toggleConnect}
+          >
+            {isConnected ? 'Отключить' : 'Подключить'}
           </button>
         </div>
       </section>

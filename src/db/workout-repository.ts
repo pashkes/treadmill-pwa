@@ -49,18 +49,27 @@ export async function createWorkoutExportPayload(): Promise<WorkoutExportPayload
 export async function migrateLegacyLocalStorageWorkouts(): Promise<void> {
   if (localStorage.getItem(MIGRATION_KEY) === '1') return;
 
+  let parsed: unknown = [];
   try {
     const raw = localStorage.getItem(LEGACY_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(parsed)) {
-      const workouts = parsed.filter(isWorkout);
-      if (workouts.length > 0) {
-        await bulkPutWorkouts(workouts);
-      }
+    parsed = raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    console.warn('Unable to parse legacy workouts', error);
+    localStorage.setItem(MIGRATION_KEY, '1');
+    return;
+  }
+
+  try {
+    if (!Array.isArray(parsed)) {
+      localStorage.setItem(MIGRATION_KEY, '1');
+      return;
     }
+    const workouts = parsed.filter(isWorkout);
+    if (workouts.length > 0) {
+      await bulkPutWorkouts(workouts);
+    }
+    localStorage.setItem(MIGRATION_KEY, '1');
   } catch (error) {
     console.warn('Unable to migrate legacy workouts', error);
-  } finally {
-    localStorage.setItem(MIGRATION_KEY, '1');
   }
 }

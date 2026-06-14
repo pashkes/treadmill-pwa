@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
-import { createCalorieBars, getPeriodWorkouts, summarizeWorkouts, type StatsPeriod } from '../../domain/stats';
+import { createCalorieBars, createFrequencyDays, getPeriodWorkouts, summarizeWorkouts, type StatsPeriod } from '../../domain/stats';
 
 const periods: Array<{ value: StatsPeriod; label: string }> = [
   { value: 'week', label: 'Неделя' },
@@ -17,6 +17,7 @@ export function StatsScreen() {
   const filtered = getPeriodWorkouts(workouts, period);
   const summary = summarizeWorkouts(filtered);
   const bars = createCalorieBars(workouts, period);
+  const frequencyDays = createFrequencyDays(workouts);
   const maxValue = Math.max(...bars.map((bar) => bar.value), 1);
 
   return (
@@ -51,6 +52,19 @@ export function StatsScreen() {
                 style={{ height: `${Math.round((bar.value / maxValue) * 68) + 4}px` }}
               />
               <div className="text-[9px] font-semibold text-neutral-700">{bar.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="mx-4 mt-3 rounded-[20px] bg-neutral-900 p-[18px]">
+        <div className="mb-3.5 text-base font-bold">Частота тренировок</div>
+        <div className="flex flex-wrap gap-1.5">
+          {frequencyDays.map((day) => (
+            <div
+              key={day.date}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold ${day.active ? 'bg-[#5B5BF6] text-white' : 'bg-neutral-800 text-neutral-700'}`}
+            >
+              {day.day}
             </div>
           ))}
         </div>

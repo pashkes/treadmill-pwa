@@ -9,7 +9,9 @@ describe('live-store', () => {
       isConnected: false,
       deviceName: null,
       isPaused: false,
+      startedDate: null,
       startedAt: null,
+      ftmsConnection: null,
       seconds: 0,
       speedKph: 0,
       maxSpeed: 0,
@@ -27,5 +29,22 @@ describe('live-store', () => {
 
     expect(saved?.seconds).toBe(1);
     expect(await db.workouts.count()).toBe(1);
+  });
+
+  it('saves workout date from start time instead of stop time', async () => {
+    useLiveStore.setState({
+      startedDate: '2026-06-13',
+      startedAt: '23:59',
+      seconds: 60,
+      km: 0.1,
+      kcal: 7,
+      steps: 120,
+      maxSpeed: 6,
+    });
+
+    const saved = await useLiveStore.getState().stopAndSave();
+
+    expect(saved?.date).toBe('2026-06-13');
+    expect(saved?.time).toBe('23:59');
   });
 });

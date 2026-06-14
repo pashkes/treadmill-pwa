@@ -16,6 +16,10 @@ export type ChartBar = {
   value: number;
 };
 
+function isPastOrToday(date: Temporal.PlainDate, today: Temporal.PlainDate): boolean {
+  return Temporal.PlainDate.compare(date, today) <= 0;
+}
+
 export function summarizeWorkouts(workouts: Workout[]): WorkoutSummary {
   return workouts.reduce(
     (summary, workout) => ({
@@ -39,7 +43,7 @@ export function getPeriodWorkouts(
   const now = Temporal.PlainDate.from(today);
   return workouts.filter((workout) => {
     const date = Temporal.PlainDate.from(workout.date);
-    if (Temporal.PlainDate.compare(date, now) > 0) return false;
+    if (!isPastOrToday(date, now)) return false;
     if (period === 'week') {
       const dayOfWeek = now.dayOfWeek % 7;
       const start = now.subtract({ days: dayOfWeek });
@@ -87,7 +91,7 @@ export function createCalorieBars(
         value: workouts
           .filter((workout) => {
             const date = Temporal.PlainDate.from(workout.date);
-            if (Temporal.PlainDate.compare(date, now) > 0) return false;
+            if (!isPastOrToday(date, now)) return false;
             return Temporal.PlainDate.compare(date, start) >= 0 && Temporal.PlainDate.compare(date, end) <= 0;
           })
           .reduce((sum, workout) => sum + workout.kcal, 0),
@@ -102,7 +106,7 @@ export function createCalorieBars(
       value: workouts
         .filter((workout) => {
           const date = Temporal.PlainDate.from(workout.date);
-          return date.year === now.year && date.month === monthIndex + 1;
+          return date.year === now.year && date.month === monthIndex + 1 && isPastOrToday(date, now);
         })
         .reduce((sum, workout) => sum + workout.kcal, 0),
     }));
@@ -114,4 +118,17 @@ export function createCalorieBars(
     label: year,
     value: workouts.filter((workout) => workout.date.startsWith(year)).reduce((sum, workout) => sum + workout.kcal, 0),
   }));
+}
+
+export function createFrequencyDays(workouts: Workout[], today = Temporal.Now.plainDateISO().toString()) {
+  const now = Temporal.PlainDate.from(today);
+  const activeDates = new Set(workouts.map((workout) => workout.date));
+  return Array.from({ length: 30 }, (_, index) => {
+    const date = now.subtract({ days: 29 - index });
+    return {
+      date: date.toString(),
+      day: date.day,
+      active: activeDates.has(date.toString()),
+    };
+  });
 }

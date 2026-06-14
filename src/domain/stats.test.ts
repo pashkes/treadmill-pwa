@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createCalorieBars, getPeriodWorkouts, summarizeWorkouts } from './stats';
+import { createCalorieBars, createFrequencyDays, getPeriodWorkouts, summarizeWorkouts } from './stats';
 import type { Workout } from './workout';
 
 const workouts: Workout[] = [
@@ -35,10 +35,18 @@ describe('stats', () => {
       { label: 'Н3', value: 0 },
       { label: 'Н4', value: 0 },
     ]);
-    expect(createCalorieBars(workouts, 'year', '2026-06-13').slice(0, 6).map((bar) => bar.value)).toEqual([0, 0, 0, 0, 0, 455]);
+    expect(createCalorieBars(workouts, 'year', '2026-06-13').slice(0, 6).map((bar) => bar.value)).toEqual([0, 0, 0, 0, 0, 195]);
     expect(createCalorieBars(workouts, 'all', '2026-06-13')).toEqual([
       { label: '2025', value: 195 },
       { label: '2026', value: 455 },
     ]);
+  });
+
+  it('creates thirty frequency days', () => {
+    const days = createFrequencyDays(workouts, '2026-06-13');
+
+    expect(days).toHaveLength(30);
+    expect(days.at(-1)).toEqual({ date: '2026-06-13', day: 13, active: false });
+    expect(days.find((day) => day.date === '2026-06-10')?.active).toBe(true);
   });
 });

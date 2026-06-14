@@ -56,6 +56,16 @@ describe('workout repository', () => {
     expect(localStorage.getItem('treadmill_v2_migrated_to_dexie')).toBe('1');
   });
 
+  it('does not mark migration complete when Dexie write fails', async () => {
+    localStorage.setItem('treadmill_v2', JSON.stringify([workout]));
+    const bulkPut = vi.spyOn(db.workouts, 'bulkPut').mockRejectedValueOnce(new Error('write failed'));
+
+    await migrateLegacyLocalStorageWorkouts();
+
+    expect(bulkPut).toHaveBeenCalled();
+    expect(localStorage.getItem('treadmill_v2_migrated_to_dexie')).toBeNull();
+  });
+
   it('creates an export payload from persisted workouts', async () => {
     await addWorkout(workout);
 
