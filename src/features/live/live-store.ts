@@ -111,19 +111,40 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
   setTreadmillData: (data) =>
     set((state) => {
-      console.log('[store] setTreadmillData', data);
       const speedKph = data.speedKph ?? state.speedKph;
-      const km = data.distanceKm ?? state.km;
-      const steps = data.steps ?? (data.distanceKm === undefined ? state.steps : estimateSteps(data.distanceKm));
-      const hasStartedMoving = state.hasStartedMoving || speedKph > 0.1 || km > 0 || (data.elapsedSeconds ?? 0) > 0;
+      // Only actual belt movement (speed or distance) signals a started session.
+      // The treadmill sends a countdown (elapsedSeconds=5,4,3…) before the belt starts;
+      // including elapsedSeconds here would trigger auto-stop before any movement.
+      const hasStartedMoving =
+        state.hasStartedMoving || speedKph > 0.1 || state.km > 0 || (data.distanceKm ?? 0) > 0;
       const autoStopRequested =
         state.autoStopRequested ||
         Boolean(state.startedAt && state.hasStartedMoving && data.speedKph !== undefined && data.speedKph <= 0.1);
 
+      // Don't sync the timer until the belt is actually moving — the pre-start countdown
+      // uses the same elapsedSeconds field and would show a descending counter on screen.
+      const prevSeconds = state.seconds;
+      const newSeconds = hasStartedMoving ? (data.elapsedSeconds ?? state.seconds) : state.seconds;
+
+      // Use treadmill distance when it reports a non-zero value.
+      // Many treadmills (including SW / T30EA-0227) always transmit distanceKm=0 even
+      // when running, so we fall back to integrating speed × elapsed-time delta.
+      let km: number;
+      if (data.distanceKm !== undefined && data.distanceKm > 0) {
+        km = data.distanceKm;
+      } else if (hasStartedMoving) {
+        const deltaSeconds = Math.min(2, Math.max(0, newSeconds - prevSeconds));
+        km = state.km + (speedKph / 3600) * deltaSeconds;
+      } else {
+        km = state.km;
+      }
+
+      const steps = data.steps ?? estimateSteps(km);
+
       const nextState = {
         speedKph,
         maxSpeed: data.speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, data.speedKph),
-        seconds: data.elapsedSeconds ?? state.seconds,
+        seconds: newSeconds,
         km,
         kcal: data.kcal ?? state.kcal,
         steps,
@@ -182,7 +203,6 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     }),
   stopAndSave: async () => {
     const state = get();
-    console.log('[store] stopAndSave called, ftmsConnection=', !!state.ftmsConnection);
     if (state.ftmsConnection) void state.ftmsConnection.stopWorkout();
     const workout: Workout = {
       id: Date.now(),
