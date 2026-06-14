@@ -1,12 +1,22 @@
 # Treadmill Workout PWA
 
-Static progressive web app for treadmill workouts and statistics.
+Offline-first treadmill workout tracker built with React, Vite, TypeScript, Dexie, and Tailwind CSS.
 
-## Files
+## Development
 
-- `index.html` - app UI and logic
-- `manifest.json` - PWA metadata
-- `sw.js` - service worker cache
-- `icons/` - PWA icons and splash image
+```bash
+npm install
+npm run dev
+```
 
-Open `index.html` in a browser or serve the folder with any static web server.
+## Checks
+
+```bash
+npm run test
+npm run build
+npm run test:e2e
+```
+
+## Storage
+
+Completed workouts are stored in IndexedDB through Dexie. On first launch, existing `localStorage` workouts from `treadmill_v2` are copied into Dexie without deleting the old value.
