@@ -56,6 +56,7 @@ const en = {
     finish: 'Finish Workout',
     workoutSaved: 'Workout saved',
     workoutCompleted: 'Workout completed',
+    activeWorkoutRestored: 'Workout restored. Reconnect treadmill',
     stopConfirm: 'Finish and save workout?',
     treadmill: 'Treadmill',
     incline: 'Incline',

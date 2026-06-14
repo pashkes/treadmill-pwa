@@ -58,6 +58,7 @@ const ru: Translations = {
     finish: 'Завершить тренировку',
     workoutSaved: 'Тренировка сохранена',
     workoutCompleted: 'Тренировка завершена',
+    activeWorkoutRestored: 'Тренировка восстановлена. Подключите дорожку заново',
     stopConfirm: 'Завершить и сохранить тренировку?',
     treadmill: 'Дорожка',
     incline: 'Угол',

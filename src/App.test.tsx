@@ -37,7 +37,7 @@ describe('App', () => {
     });
   });
 
-  it('opens the live screen when an active workout was persisted before refresh', async () => {
+  function persistActiveWorkout() {
     useLiveStore.setState({ isConnected: true, deviceName: 'Blue treadmill' });
     useLiveStore.getState().start();
     useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 0.4, kcal: 38, elapsedSeconds: 278 });
@@ -56,11 +56,27 @@ describe('App', () => {
       hasStartedMoving: false,
       autoStopRequested: false,
     });
+  }
+
+  it('opens the live screen when an active workout was persisted before refresh', async () => {
+    persistActiveWorkout();
 
     render(<RouterProvider router={router} />);
 
     expect(await screen.findByText('Свободная тренировка')).toBeVisible();
     expect(screen.getByText('04:38')).toBeVisible();
     expect(screen.getByText('Blue treadmill')).toBeVisible();
+    expect(screen.getByRole('status')).toHaveTextContent('Тренировка восстановлена. Подключите дорожку заново');
+  });
+
+  it('translates the restored workout toast and keeps it away from the live header', async () => {
+    useAppStore.setState({ locale: 'en' });
+    persistActiveWorkout();
+
+    render(<RouterProvider router={router} />);
+
+    expect(await screen.findByText('Free Workout')).toBeVisible();
+    expect(screen.getByRole('status')).toHaveTextContent('Workout restored. Reconnect treadmill');
+    expect(screen.getByRole('status')).toHaveClass('bottom-[calc(env(safe-area-inset-bottom)+24px)]');
   });
 });

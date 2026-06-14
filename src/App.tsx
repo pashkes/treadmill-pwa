@@ -35,8 +35,8 @@ export function App() {
     if (!restoreActiveWorkout()) return;
     showScreen('live');
     void navigate({ to: '/live' });
-    showToast('Тренировка восстановлена. Подключите дорожку заново');
-  }, [navigate, restoreActiveWorkout, showScreen, showToast]);
+    showToast(t.live.activeWorkoutRestored);
+  }, [navigate, restoreActiveWorkout, showScreen, showToast, t]);
 
   // One-way sync: URL → Zustand screen state. Navigation always goes through the router.
   useEffect(() => {
