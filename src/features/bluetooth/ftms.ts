@@ -115,7 +115,7 @@ export async function connectFtms(onData: (data: TreadmillData) => void, onDisco
   async function writeControlPoint(data: Uint8Array): Promise<void> {
     if (!controlPoint) return;
     try {
-      await controlPoint.writeValueWithoutResponse(data);
+      await controlPoint.writeValueWithoutResponse(data.buffer as ArrayBuffer);
     } catch (err) {
       console.warn('[FTMS] writeControlPoint failed:', err);
     }
