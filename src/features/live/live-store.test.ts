@@ -47,4 +47,12 @@ describe('live-store', () => {
     expect(saved?.date).toBe('2026-06-13');
     expect(saved?.time).toBe('23:59');
   });
+
+  it('uses treadmill-reported distance when available', () => {
+    useLiveStore.getState().setTreadmillData(6, 1.25);
+
+    expect(useLiveStore.getState().speedKph).toBe(6);
+    expect(useLiveStore.getState().km).toBe(1.25);
+    expect(useLiveStore.getState().kcal).toBe(81.25);
+  });
 });

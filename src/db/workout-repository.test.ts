@@ -47,6 +47,28 @@ describe('workout repository', () => {
     expect(localStorage.getItem('treadmill_v2_migrated_to_dexie')).toBe('1');
   });
 
+  it('normalizes older legacy workouts without seconds steps or maxSpeed', async () => {
+    const olderWorkout = {
+      id: 99,
+      date: '2026-06-12',
+      time: '07:30',
+      min: 12,
+      km: 1.2,
+      kcal: 80,
+    };
+    localStorage.setItem('treadmill_v2', JSON.stringify([olderWorkout]));
+
+    await migrateLegacyLocalStorageWorkouts();
+
+    expect(await getWorkout(99)).toEqual({
+      ...olderWorkout,
+      seconds: 720,
+      steps: 0,
+      maxSpeed: 0,
+    });
+    expect(localStorage.getItem('treadmill_v2_migrated_to_dexie')).toBe('1');
+  });
+
   it('ignores invalid legacy localStorage data and marks migration complete', async () => {
     localStorage.setItem('treadmill_v2', '{broken');
 

@@ -20,6 +20,7 @@ type LiveState = {
   setConnection: (isConnected: boolean, deviceName: string | null) => void;
   setFtmsConnection: (connection: FtmsConnection | null) => void;
   setSpeed: (speedKph: number) => void;
+  setTreadmillData: (speedKph: number, distanceKm?: number) => void;
   start: () => void;
   tick: () => void;
   pause: () => void;
@@ -43,6 +44,13 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   setConnection: (isConnected, deviceName) => set({ isConnected, deviceName }),
   setFtmsConnection: (ftmsConnection) => set({ ftmsConnection }),
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
+  setTreadmillData: (speedKph, distanceKm) =>
+    set((state) => ({
+      speedKph,
+      maxSpeed: Math.max(state.maxSpeed, speedKph),
+      km: distanceKm ?? state.km,
+      kcal: (distanceKm ?? state.km) * 65,
+    })),
   start: () =>
     set({
       isPaused: false,

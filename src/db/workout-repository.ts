@@ -5,20 +5,36 @@ import { db } from './app-db';
 const LEGACY_KEY = 'treadmill_v2';
 const MIGRATION_KEY = 'treadmill_v2_migrated_to_dexie';
 
-function isWorkout(value: unknown): value is Workout {
-  if (!value || typeof value !== 'object') return false;
+function normalizeLegacyWorkout(value: unknown): Workout | null {
+  if (!value || typeof value !== 'object') return null;
   const workout = value as Record<string, unknown>;
-  return (
+  const hasRequiredFields =
     typeof workout.id === 'number' &&
     typeof workout.date === 'string' &&
     typeof workout.time === 'string' &&
-    typeof workout.seconds === 'number' &&
     typeof workout.km === 'number' &&
     typeof workout.kcal === 'number' &&
-    typeof workout.min === 'number' &&
-    typeof workout.steps === 'number' &&
-    typeof workout.maxSpeed === 'number'
-  );
+    typeof workout.min === 'number';
+  if (!hasRequiredFields) return null;
+
+  const id = workout.id as number;
+  const date = workout.date as string;
+  const time = workout.time as string;
+  const km = workout.km as number;
+  const kcal = workout.kcal as number;
+  const min = workout.min as number;
+
+  return {
+    id,
+    date,
+    time,
+    seconds: typeof workout.seconds === 'number' ? workout.seconds : min * 60,
+    km,
+    kcal,
+    min,
+    steps: typeof workout.steps === 'number' ? workout.steps : 0,
+    maxSpeed: typeof workout.maxSpeed === 'number' ? workout.maxSpeed : 0,
+  };
 }
 
 export async function listWorkouts(): Promise<Workout[]> {
@@ -64,7 +80,7 @@ export async function migrateLegacyLocalStorageWorkouts(): Promise<void> {
       localStorage.setItem(MIGRATION_KEY, '1');
       return;
     }
-    const workouts = parsed.filter(isWorkout);
+    const workouts = parsed.map(normalizeLegacyWorkout).filter((workout): workout is Workout => workout !== null);
     if (workouts.length > 0) {
       await bulkPutWorkouts(workouts);
     }

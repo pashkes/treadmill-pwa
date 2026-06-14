@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
@@ -10,7 +11,8 @@ import { TreadmillArt } from '../../ui/TreadmillArt';
 
 export function HomeScreen() {
   const showScreen = useAppStore((state) => state.showScreen);
-  const workouts = useLiveQuery(() => db.workouts.where('date').equals(todayString()).toArray(), []) ?? [];
+  const [today, setToday] = useState(todayString);
+  const workouts = useLiveQuery(() => db.workouts.where('date').equals(today).toArray(), [today]) ?? [];
   const summary = summarizeWorkouts(workouts);
   const isConnected = useLiveStore((state) => state.isConnected);
   const deviceName = useLiveStore((state) => state.deviceName);
@@ -18,8 +20,13 @@ export function HomeScreen() {
   const start = useLiveStore((state) => state.start);
   const setConnection = useLiveStore((state) => state.setConnection);
   const setFtmsConnection = useLiveStore((state) => state.setFtmsConnection);
-  const setSpeed = useLiveStore((state) => state.setSpeed);
+  const setTreadmillData = useLiveStore((state) => state.setTreadmillData);
   const showToast = useAppStore((state) => state.showToast);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setToday(todayString()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   async function toggleConnect() {
     if (isConnected) {
@@ -33,7 +40,7 @@ export function HomeScreen() {
     try {
       const connection = await connectFtms(
         (data) => {
-          setSpeed(data.speedKph);
+          setTreadmillData(data.speedKph, data.distanceKm);
         },
         () => {
           setFtmsConnection(null);
