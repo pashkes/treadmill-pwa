@@ -1152,6 +1152,7 @@ function Metric({ label, value, unit, color }: { label: string; value: string; u
 
 `src/features/live/LiveScreen.tsx`:
 
+{% raw %}
 ```tsx
 import { Pause, Play } from 'lucide-react';
 import { useEffect } from 'react';
@@ -1230,6 +1231,7 @@ function LiveMetric({ label, value, unit, color }: { label: string; value: strin
   );
 }
 ```
+{% endraw %}
 
 - [ ] **Step 6: Run build and adjust missing imports**
 
@@ -1349,6 +1351,7 @@ export function createCalorieBars(workouts: Workout[], period: StatsPeriod, toda
 
 `src/features/stats/StatsScreen.tsx`:
 
+{% raw %}
 ```tsx
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
@@ -1413,6 +1416,7 @@ function Stat({ label, value, unit, color }: { label: string; value: string; uni
   );
 }
 ```
+{% endraw %}
 
 - [ ] **Step 3: Implement history screen**
 
