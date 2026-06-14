@@ -32,6 +32,7 @@ describe('WorkoutDetailScreen', () => {
       selectedWorkoutId: workout.id,
       statsPeriod: 'week',
       toast: { message: '', visible: false },
+      locale: 'ru',
     });
   });
 

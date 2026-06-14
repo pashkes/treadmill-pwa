@@ -19,13 +19,13 @@ export function nowTimeString(): string {
   return `${String(now.hour).padStart(2, '0')}:${String(now.minute).padStart(2, '0')}`;
 }
 
-export function formatMonthLabel(monthKey: string): string {
+export function formatMonthLabel(monthKey: string, locale = 'en'): string {
   const [year, month] = monthKey.split('-').map(Number);
   const date = new Date(year, month - 1, 1);
-  const monthName = new Intl.DateTimeFormat('ru', { month: 'long' }).format(date);
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'long' }).format(date);
   return `${year} · ${monthName[0].toUpperCase()}${monthName.slice(1)}`;
 }
 
-export function formatNumber(value: number, maximumFractionDigits = 0): string {
-  return new Intl.NumberFormat('ru', { maximumFractionDigits }).format(value);
+export function formatNumber(value: number, locale = 'en', maximumFractionDigits = 0): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
 }

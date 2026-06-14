@@ -29,11 +29,11 @@ describe('stats', () => {
 
   it('creates calorie bars for week, month, year, and all time', () => {
     expect(createCalorieBars(workouts, 'week', '2026-06-13').map((bar) => bar.value)).toEqual([0, 0, 0, 130, 0, 0, 0]);
-    expect(createCalorieBars(workouts, 'month', '2026-06-13')).toEqual([
-      { label: 'Н1', value: 65 },
-      { label: 'Н2', value: 130 },
-      { label: 'Н3', value: 0 },
-      { label: 'Н4', value: 0 },
+    expect(createCalorieBars(workouts, 'month', '2026-06-13', 'en', ['W1', 'W2', 'W3', 'W4'])).toEqual([
+      { label: 'W1', value: 65 },
+      { label: 'W2', value: 130 },
+      { label: 'W3', value: 0 },
+      { label: 'W4', value: 0 },
     ]);
     expect(
       createCalorieBars(workouts, 'year', '2026-06-13')

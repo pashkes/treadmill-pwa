@@ -135,8 +135,12 @@ Use `@js-temporal/polyfill` for date math because native `Temporal` is not relia
 
 Use `Intl` for presentation:
 
-- `Intl.DateTimeFormat('ru')` for month and date labels.
-- `Intl.NumberFormat('ru')` for localized numeric output.
+- `Intl.DateTimeFormat(locale, { month: 'long' })` for month labels in history.
+- `Intl.DateTimeFormat(locale, { weekday: 'narrow' })` for day-of-week bar labels in the weekly chart.
+- `Intl.DateTimeFormat(locale, { month: 'narrow' })` for month bar labels in the yearly chart.
+- `Intl.NumberFormat(locale)` for localized numeric output.
+
+The `locale` value comes from `app-store` (see State Management below) and is passed as a parameter to domain functions (`formatMonthLabel`, `formatNumber`, `createCalorieBars`) rather than being hardcoded.
 
 All persisted dates stay as local calendar strings in `YYYY-MM-DD` format to preserve current behavior.
 
@@ -149,6 +153,7 @@ Use Zustand only for runtime state:
 - Bluetooth connection status.
 - Live workout state.
 - Current stats period.
+- Current locale (detected once at startup from `navigator.language`).
 
 Use Dexie as the source of truth for completed workouts. Screens that read persisted workouts should use `useLiveQuery` from `dexie-react-hooks`.
 
@@ -163,7 +168,6 @@ Keep current manifest behavior:
 - portrait orientation
 - black theme and background color
 - current app icons
-- Russian app metadata
 
 The app should continue to work offline after the first successful load.
 
@@ -189,9 +193,19 @@ Payload:
 
 Export reads from Dexie and downloads a local JSON file. Import is not part of this migration.
 
+## Internationalisation
+
+The app supports multiple locales. The default locale is detected from `navigator.language` at startup and stored in `app-store`.
+
+Supported locales: `ru` (Russian), `uk` (Ukrainian), `en` (English, fallback).
+
+All UI strings live in `src/i18n/` translation files. Components read translations via the `useT()` hook. Domain functions that format user-visible labels (`formatMonthLabel`, `formatNumber`, `createCalorieBars`) accept an explicit `locale` string parameter.
+
+Chart bar labels (weekdays, months) are generated at runtime with `Intl.DateTimeFormat` rather than hardcoded arrays, so they adapt automatically to the active locale.
+
 ## UI
 
-Preserve the current mobile-first dark treadmill app feel and Russian labels.
+Preserve the current mobile-first dark treadmill app feel.
 
 Tailwind should replace the inline CSS, but the migration should avoid unrelated redesign work. Components can refine spacing and states where React structure makes it clearer, but the visual result should remain recognizably the same app.
 

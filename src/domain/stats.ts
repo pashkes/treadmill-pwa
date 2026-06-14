@@ -52,37 +52,44 @@ export function getPeriodWorkouts(workouts: Workout[], period: StatsPeriod, toda
   });
 }
 
-export function createCalorieBars(workouts: Workout[], period: StatsPeriod, today = Temporal.Now.plainDateISO().toString()): ChartBar[] {
+function narrowWeekday(locale: string, plainDate: Temporal.PlainDate): string {
+  const jsDate = new Date(plainDate.year, plainDate.month - 1, plainDate.day);
+  return new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(jsDate);
+}
+
+function narrowMonth(locale: string, year: number, monthIndex: number): string {
+  return new Intl.DateTimeFormat(locale, { month: 'narrow' }).format(new Date(year, monthIndex, 1));
+}
+
+export function createCalorieBars(
+  workouts: Workout[],
+  period: StatsPeriod,
+  today = Temporal.Now.plainDateISO().toString(),
+  locale = 'en',
+  weekLabels?: string[],
+): ChartBar[] {
   const now = Temporal.PlainDate.from(today);
 
   if (period === 'week') {
-    const labels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
     return Array.from({ length: 7 }, (_, index) => {
       const date = now.subtract({ days: 6 - index });
       const dateString = date.toString();
       return {
-        label: labels[date.dayOfWeek % 7],
+        label: narrowWeekday(locale, date),
         value: workouts.filter((workout) => workout.date === dateString).reduce((sum, workout) => sum + workout.kcal, 0),
       };
     });
   }
 
   if (period === 'month') {
+    const labels = weekLabels ?? ['W1', 'W2', 'W3', 'W4'];
     const monthStart = now.with({ day: 1 });
     const monthEnd = monthStart.add({ months: 1 }).subtract({ days: 1 });
     const ranges = [
-      { label: 'Н1', start: monthStart, end: monthStart.with({ day: Math.min(7, monthEnd.day) }) },
-      {
-        label: 'Н2',
-        start: monthStart.with({ day: Math.min(8, monthEnd.day) }),
-        end: monthStart.with({ day: Math.min(14, monthEnd.day) }),
-      },
-      {
-        label: 'Н3',
-        start: monthStart.with({ day: Math.min(15, monthEnd.day) }),
-        end: monthStart.with({ day: Math.min(21, monthEnd.day) }),
-      },
-      { label: 'Н4', start: monthStart.with({ day: Math.min(22, monthEnd.day) }), end: monthEnd },
+      { label: labels[0], start: monthStart, end: monthStart.with({ day: Math.min(7, monthEnd.day) }) },
+      { label: labels[1], start: monthStart.with({ day: Math.min(8, monthEnd.day) }), end: monthStart.with({ day: Math.min(14, monthEnd.day) }) },
+      { label: labels[2], start: monthStart.with({ day: Math.min(15, monthEnd.day) }), end: monthStart.with({ day: Math.min(21, monthEnd.day) }) },
+      { label: labels[3], start: monthStart.with({ day: Math.min(22, monthEnd.day) }), end: monthEnd },
     ];
 
     return ranges.map(({ label, start, end }) => {
@@ -100,9 +107,8 @@ export function createCalorieBars(workouts: Workout[], period: StatsPeriod, toda
   }
 
   if (period === 'year') {
-    const labels = ['Я', 'Ф', 'М', 'А', 'М', 'И', 'И', 'А', 'С', 'О', 'Н', 'Д'];
-    return labels.map((label, monthIndex) => ({
-      label,
+    return Array.from({ length: 12 }, (_, monthIndex) => ({
+      label: narrowMonth(locale, now.year, monthIndex),
       value: workouts
         .filter((workout) => {
           const date = Temporal.PlainDate.from(workout.date);

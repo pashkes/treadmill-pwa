@@ -21,6 +21,7 @@ describe('HomeScreen', () => {
       selectedWorkoutId: null,
       statsPeriod: 'week',
       toast: { message: '', visible: false },
+      locale: 'ru',
     });
     useLiveStore.setState({
       isConnected: false,

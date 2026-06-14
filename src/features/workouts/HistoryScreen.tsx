@@ -1,10 +1,14 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
 import { formatMonthLabel } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
+import { useT } from '../../i18n';
 
 export function HistoryScreen() {
+  const t = useT();
+  const locale = useAppStore((state) => state.locale);
   const navigate = useNavigate();
   const workouts = useLiveQuery(() => db.workouts.orderBy('date').reverse().toArray(), []) ?? [];
 
@@ -12,14 +16,14 @@ export function HistoryScreen() {
     return (
       <main className="min-h-dvh pb-24">
         <header className="px-4 pt-14">
-          <h1 className="text-[28px] font-extrabold">История</h1>
+          <h1 className="text-[28px] font-extrabold">{t.history.title}</h1>
         </header>
         <div className="px-8 py-16 text-center text-neutral-700">
           <div className="mb-3 text-5xl">🏃</div>
           <p className="text-[15px] leading-relaxed">
-            Тренировок пока нет.
+            {t.history.emptyLine1}
             <br />
-            Нажми GO чтобы начать!
+            {t.history.emptyLine2}
           </p>
         </div>
       </main>
@@ -30,12 +34,12 @@ export function HistoryScreen() {
   return (
     <main className="min-h-dvh pb-24">
       <header className="px-4 pt-14">
-        <h1 className="text-[28px] font-extrabold">История</h1>
+        <h1 className="text-[28px] font-extrabold">{t.history.title}</h1>
       </header>
       <div className="mt-4">
         {groups.map(([month, items]) => (
           <section key={month}>
-            <div className="mx-4 mb-2 mt-4 text-sm font-semibold text-neutral-700">{formatMonthLabel(month)}</div>
+            <div className="mx-4 mb-2 mt-4 text-sm font-semibold text-neutral-700">{formatMonthLabel(month, locale)}</div>
             {items.map((workout) => (
               <button
                 key={workout.id}
@@ -44,15 +48,15 @@ export function HistoryScreen() {
                 onClick={() => void navigate({ to: '/workouts/$workoutId', params: { workoutId: String(workout.id) } })}
               >
                 <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-[15px] font-bold">Свободная тренировка</span>
+                  <span className="text-[15px] font-bold">{t.history.freeWorkout}</span>
                   <span className="text-xs text-neutral-700">
                     {workout.date.slice(5).replace('-', '/')} {workout.time}
                   </span>
                 </div>
                 <div className="flex gap-5">
-                  <Metric value={String(workout.km)} unit="км" />
-                  <Metric value={String(workout.kcal)} unit="ккал" />
-                  <Metric value={String(workout.min)} unit="мин" />
+                  <Metric value={String(workout.km)} unit={t.units.km} />
+                  <Metric value={String(workout.kcal)} unit={t.units.kcal} />
+                  <Metric value={String(workout.min)} unit={t.units.min} />
                 </div>
               </button>
             ))}
