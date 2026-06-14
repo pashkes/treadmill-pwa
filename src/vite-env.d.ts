@@ -5,3 +5,30 @@ interface Navigator {
     requestDevice(options: RequestDeviceOptions): Promise<BluetoothDevice>;
   };
 }
+
+type RequestDeviceOptions = {
+  filters?: Array<{ services?: string[] }>;
+  optionalServices?: string[];
+};
+
+type BluetoothDevice = EventTarget & {
+  name?: string;
+  gatt?: BluetoothRemoteGATTServer;
+};
+
+type BluetoothRemoteGATTServer = {
+  connected: boolean;
+  connect(): Promise<BluetoothRemoteGATTServer>;
+  disconnect(): void;
+  getPrimaryService(service: string): Promise<BluetoothRemoteGATTService>;
+};
+
+type BluetoothRemoteGATTService = {
+  getCharacteristic(characteristic: string): Promise<BluetoothRemoteGATTCharacteristic>;
+};
+
+type BluetoothRemoteGATTCharacteristic = EventTarget & {
+  startNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
+  stopNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
+  writeValueWithoutResponse(value: BufferSource): Promise<void>;
+};

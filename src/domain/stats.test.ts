@@ -35,7 +35,11 @@ describe('stats', () => {
       { label: 'Н3', value: 0 },
       { label: 'Н4', value: 0 },
     ]);
-    expect(createCalorieBars(workouts, 'year', '2026-06-13').slice(0, 6).map((bar) => bar.value)).toEqual([0, 0, 0, 0, 0, 195]);
+    expect(
+      createCalorieBars(workouts, 'year', '2026-06-13')
+        .slice(0, 6)
+        .map((bar) => bar.value),
+    ).toEqual([0, 0, 0, 0, 0, 195]);
     expect(createCalorieBars(workouts, 'all', '2026-06-13')).toEqual([
       { label: '2025', value: 195 },
       { label: '2026', value: 455 },

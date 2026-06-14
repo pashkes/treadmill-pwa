@@ -4,6 +4,9 @@ import { nowTimeString, todayString } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
 import type { FtmsConnection, TreadmillData } from '../bluetooth/ftms';
 
+const ACTIVE_WORKOUT_KEY = 'walking-app-active-workout';
+const ESTIMATED_STEPS_PER_KM = 1280;
+
 type LiveState = {
   isConnected: boolean;
   deviceName: string | null;
@@ -17,16 +20,75 @@ type LiveState = {
   km: number;
   kcal: number;
   steps: number;
+  inclinePercent: number;
+  hasStartedMoving: boolean;
+  autoStopRequested: boolean;
   setConnection: (isConnected: boolean, deviceName: string | null) => void;
   setFtmsConnection: (connection: FtmsConnection | null) => void;
   setSpeed: (speedKph: number) => void;
   setTreadmillData: (data: TreadmillData) => void;
+  restoreActiveWorkout: () => boolean;
   start: () => boolean;
   tick: () => void;
   pause: () => void;
   changeSpeed: (delta: number) => void;
   stopAndSave: () => Promise<Workout | null>;
+  clearAutoStopRequest: () => void;
 };
+
+type PersistedActiveWorkout = Pick<
+  LiveState,
+  | 'deviceName'
+  | 'startedDate'
+  | 'startedAt'
+  | 'seconds'
+  | 'speedKph'
+  | 'maxSpeed'
+  | 'km'
+  | 'kcal'
+  | 'steps'
+  | 'inclinePercent'
+  | 'hasStartedMoving'
+>;
+
+function estimateSteps(distanceKm: number): number {
+  return Math.round(Math.max(0, distanceKm) * ESTIMATED_STEPS_PER_KM);
+}
+
+function persistActiveWorkout(state: LiveState): void {
+  if (!state.startedAt || !state.startedDate) return;
+
+  const payload: PersistedActiveWorkout = {
+    deviceName: state.deviceName,
+    startedDate: state.startedDate,
+    startedAt: state.startedAt,
+    seconds: state.seconds,
+    speedKph: state.speedKph,
+    maxSpeed: state.maxSpeed,
+    km: state.km,
+    kcal: state.kcal,
+    steps: state.steps,
+    inclinePercent: state.inclinePercent,
+    hasStartedMoving: state.hasStartedMoving,
+  };
+  window.localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(payload));
+}
+
+function readActiveWorkout(): PersistedActiveWorkout | null {
+  const raw = window.localStorage.getItem(ACTIVE_WORKOUT_KEY);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as PersistedActiveWorkout;
+  } catch {
+    window.localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+    return null;
+  }
+}
+
+function clearActiveWorkout(): void {
+  window.localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+}
 
 export const useLiveStore = create<LiveState>((set, get) => ({
   isConnected: false,
@@ -41,35 +103,69 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   km: 0,
   kcal: 0,
   steps: 0,
+  inclinePercent: 0,
+  hasStartedMoving: false,
+  autoStopRequested: false,
   setConnection: (isConnected, deviceName) => set({ isConnected, deviceName }),
   setFtmsConnection: (ftmsConnection) => set({ ftmsConnection }),
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
   setTreadmillData: (data) =>
     set((state) => {
       const speedKph = data.speedKph ?? state.speedKph;
+      const km = data.distanceKm ?? state.km;
+      const steps = data.steps ?? (data.distanceKm === undefined ? state.steps : estimateSteps(data.distanceKm));
+      const hasStartedMoving = state.hasStartedMoving || speedKph > 0.1 || km > 0 || (data.elapsedSeconds ?? 0) > 0;
+      const autoStopRequested =
+        state.autoStopRequested ||
+        Boolean(state.startedAt && state.hasStartedMoving && data.speedKph !== undefined && data.speedKph <= 0.1);
 
-      return {
+      const nextState = {
         speedKph,
         maxSpeed: data.speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, data.speedKph),
         seconds: data.elapsedSeconds ?? state.seconds,
-        km: data.distanceKm ?? state.km,
+        km,
         kcal: data.kcal ?? state.kcal,
+        steps,
+        inclinePercent: data.inclinePercent ?? state.inclinePercent,
+        hasStartedMoving,
+        autoStopRequested,
       };
+
+      persistActiveWorkout({ ...state, ...nextState });
+      return nextState;
     }),
+  restoreActiveWorkout: () => {
+    const activeWorkout = readActiveWorkout();
+    if (!activeWorkout?.startedAt || !activeWorkout.startedDate) return false;
+
+    set({
+      ...activeWorkout,
+      isConnected: false,
+      isPaused: false,
+      ftmsConnection: null,
+      autoStopRequested: false,
+    });
+    return true;
+  },
   start: () => {
     if (!get().isConnected) return false;
 
-    set({
+    const nextState = {
       isPaused: false,
       startedDate: todayString(),
       startedAt: nowTimeString(),
       seconds: 0,
       speedKph: get().speedKph,
-      maxSpeed: 0,
+      maxSpeed: get().speedKph,
       km: 0,
       kcal: 0,
       steps: 0,
-    });
+      inclinePercent: 0,
+      hasStartedMoving: false,
+      autoStopRequested: false,
+    };
+    set(nextState);
+    persistActiveWorkout({ ...get(), ...nextState });
     return true;
   },
   tick: () => undefined,
@@ -95,8 +191,27 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       steps: Math.round(state.steps),
       maxSpeed: Math.round(state.maxSpeed * 10) / 10,
     };
-    if (workout.seconds <= 0) return null;
+    if (workout.seconds <= 0) {
+      clearActiveWorkout();
+      return null;
+    }
     await addWorkout(workout);
+    clearActiveWorkout();
+    set({
+      isPaused: false,
+      startedDate: null,
+      startedAt: null,
+      seconds: 0,
+      speedKph: 0,
+      maxSpeed: 0,
+      km: 0,
+      kcal: 0,
+      steps: 0,
+      inclinePercent: 0,
+      hasStartedMoving: false,
+      autoStopRequested: false,
+    });
     return workout;
   },
+  clearAutoStopRequest: () => set({ autoStopRequested: false }),
 }));

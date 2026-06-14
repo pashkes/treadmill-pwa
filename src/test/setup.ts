@@ -20,3 +20,8 @@ Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageShim,
   configurable: true,
 });
+
+Object.defineProperty(window, 'scrollTo', {
+  value: () => undefined,
+  configurable: true,
+});

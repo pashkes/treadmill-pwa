@@ -15,7 +15,12 @@ export function WorkoutDetailScreen() {
   if (!workout) {
     return (
       <main className="min-h-dvh px-5 pt-16">
-        <button type="button" className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-neutral-900" onClick={() => showScreen('history')} aria-label="Назад">
+        <button
+          type="button"
+          className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-neutral-900"
+          onClick={() => showScreen('history')}
+          aria-label="Назад"
+        >
           <ChevronLeft size={24} />
         </button>
         <p className="mt-8 text-neutral-400">Тренировка не найдена</p>
@@ -42,13 +47,18 @@ export function WorkoutDetailScreen() {
   return (
     <main className="min-h-dvh bg-black pb-8 pt-16 text-white">
       <div className="flex items-center justify-between px-5">
-        <button type="button" className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-neutral-900" onClick={() => showScreen('history')} aria-label="Назад">
+        <button
+          type="button"
+          className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-neutral-900"
+          onClick={() => showScreen('history')}
+          aria-label="Назад"
+        >
           <ChevronLeft size={24} />
         </button>
         <button
           type="button"
           className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-red-500/30 bg-red-500/10 text-red-500"
-          onClick={handleDelete}
+          onClick={() => void handleDelete()}
           aria-label="Удалить тренировку"
         >
           <Trash2 size={20} />
