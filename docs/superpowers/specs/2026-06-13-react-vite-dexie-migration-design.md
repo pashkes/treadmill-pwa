@@ -2,6 +2,8 @@
 
 Date: 2026-06-13
 
+Status: implemented and current as of 2026-06-15. This document now records the delivered React/Vite/Dexie architecture and the intentional follow-up changes merged after the original migration plan.
+
 ## Goal
 
 Migrate the current static treadmill workout PWA from a single `index.html` file with `localStorage` persistence to a maintainable React application using Vite, TypeScript, Dexie, and Tailwind CSS.
@@ -21,14 +23,15 @@ The first migration scope is offline-first local persistence with JSON export. I
 
 ## Current State
 
-The app is a static PWA with these files:
+The app has been migrated from the original static PWA to a React/Vite/TypeScript application.
 
-- `index.html`: UI, styles, application state, Bluetooth integration, statistics, workout detail rendering, and `localStorage` persistence.
-- `manifest.json`: PWA metadata.
-- `sw.js`: hand-written service worker cache.
-- `icons/`: PWA icons and splash image.
+- `index.html`: Vite HTML shell with the React root.
+- `src/`: React application, domain logic, Dexie persistence, i18n, Bluetooth integration, and tests.
+- `vite.config.ts`: React, Tailwind, Vitest, and `vite-plugin-pwa` configuration.
+- `public/icons/`: PWA icons and splash image copied by Vite.
+- `icons/`: source PWA icons retained in the repository.
 
-Persistent workouts are stored under the `localStorage` key `treadmill_v2`.
+Completed workouts are stored in Dexie/IndexedDB. The legacy `localStorage` key `treadmill_v2` is read once during migration and is not deleted. Active in-progress workouts are temporarily persisted under `walking-app-active-workout` so a page reload can restore the live session state.
 
 ## Stack
 
@@ -44,11 +47,12 @@ Use:
 - Native `Intl` APIs for formatting dates, times, numbers, and Russian labels.
 - `vite-plugin-pwa` for manifest and service worker generation.
 - `lucide-react` for UI icons.
+- `@tanstack/react-router` for URL-backed screens.
 - Vitest and Testing Library for unit/component tests.
 - `fake-indexeddb` for Dexie repository tests.
 - Playwright for a smoke test of the core workout flow.
 
-Do not use `date-fns`, Redux, TanStack Query, or a general-purpose component kit in this migration.
+Do not use `date-fns`, Redux, TanStack Query, or a general-purpose component kit in this migration. `@tanstack/react-router` is intentionally used only for routing.
 
 ## Architecture
 
@@ -59,12 +63,13 @@ src/
   app/
     App.tsx
     app-store.ts
-    routes.ts
+    router.tsx
   db/
     app-db.ts
     workout-repository.ts
   domain/
     date-time.ts
+    export.ts
     stats.ts
     workout.ts
   features/
@@ -74,8 +79,10 @@ src/
     stats/
     workouts/
   ui/
-    components/
-    icons/
+    TabBar.tsx
+    Toast.tsx
+    TreadmillArt.tsx
+  i18n/
   main.tsx
 ```
 
@@ -87,8 +94,9 @@ Responsibilities:
 - `features/live` owns live workout runtime behavior.
 - `features/workouts` owns history and workout detail screens.
 - `features/stats` owns period tabs and aggregate views.
-- `features/export` owns JSON export.
-- `app` owns top-level navigation, PWA setup, and runtime UI state.
+- `features/export` owns JSON export and browser download behavior.
+- `app` owns top-level shell, TanStack Router setup, URL to screen-state sync, and runtime UI state.
+- `i18n` owns translations for `ru`, `uk`, and `en`, locale detection, and the `useT()` hook.
 - `ui` owns reusable presentational components.
 
 Keep domain logic independent from React so calculations can be tested directly.
@@ -124,8 +132,10 @@ The repository should expose:
 - `listWorkouts()`
 - `getWorkout(id)`
 - `addWorkout(workout)`
+- `deleteWorkout(id)`
 - `bulkPutWorkouts(workouts)`
 - `exportWorkouts()`
+- `createWorkoutExportPayload()`
 
 On first launch after migration, read the old `localStorage` key `treadmill_v2`. If it contains valid workouts, copy them into Dexie and mark migration complete with a separate local flag. Do not delete the old data during this migration.
 
@@ -149,13 +159,14 @@ All persisted dates stay as local calendar strings in `YYYY-MM-DD` format to pre
 Use Zustand only for runtime state:
 
 - Active screen.
+- Selected workout id.
 - Toast state.
 - Bluetooth connection status.
 - Live workout state.
 - Current stats period.
 - Current locale (detected once at startup from `navigator.language`).
 
-Use Dexie as the source of truth for completed workouts. Screens that read persisted workouts should use `useLiveQuery` from `dexie-react-hooks`.
+Use Dexie as the source of truth for completed workouts. Screens that read persisted workouts should use `useLiveQuery` from `dexie-react-hooks`. Navigation is URL-backed with TanStack Router, with a one-way URL to Zustand sync for compatibility with the existing screen state model.
 
 ## PWA
 
@@ -220,6 +231,8 @@ Handle:
 - Web Bluetooth unsupported browser with the current user-facing message.
 - Web Bluetooth request/connect/read/write failures with toast feedback.
 - Export failure with a toast.
+- Active workout restore after reload with a toast telling the user to reconnect the treadmill.
+- Automatic stop when the treadmill reports belt speed returning to zero after real movement has started.
 
 ## Testing
 
@@ -237,9 +250,9 @@ Add focused tests:
 - Cloud sync.
 - User accounts.
 - Backend API.
-- Workout editing or deletion.
+- Workout editing.
 - Full visual redesign.
-- Rewriting Bluetooth support beyond isolating the existing behavior.
+- Replacing Web Bluetooth/FTMS with another treadmill integration.
 
 ## Acceptance Criteria
 
@@ -251,3 +264,6 @@ Add focused tests:
 - JSON export downloads all persisted workouts.
 - Tests cover the core calculations and persistence path.
 - Manual smoke test confirms the main workout flow works in the browser.
+- URL routes work for home, live, stats, history, and workout detail screens.
+- The detail screen can delete a saved workout after confirmation.
+- Active workout state can be restored after reload, while the treadmill connection itself must be re-established.

@@ -1,12 +1,23 @@
 # React Vite Dexie Migration Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Replace the static `index.html` treadmill PWA with a React/Vite/TypeScript app that stores workouts in Dexie and supports offline-first JSON export.
 
 **Architecture:** Build a Vite React app with focused modules for domain calculations, persistence, runtime app state, Bluetooth, screens, PWA setup, and export. Dexie is the source of truth for completed workouts, Zustand holds live UI state, and domain logic stays framework-independent for tests.
 
 **Tech Stack:** React, Vite, TypeScript, Tailwind CSS, Dexie, dexie-react-hooks, Zustand, @js-temporal/polyfill, vite-plugin-pwa, lucide-react, Vitest, Testing Library, fake-indexeddb, Playwright.
+
+**Status:** Implemented and merged as of 2026-06-15. Checkboxes below are marked complete because the current repository contains the migrated app, tests, PWA build output, and Playwright smoke coverage. This plan is now an implementation record, not an open task list.
+
+**Current implementation notes:**
+
+- URL-backed navigation uses `@tanstack/react-router` in `src/app/router.tsx`; the original "no TanStack Query" constraint still applies and does not prohibit TanStack Router.
+- i18n was added after the first migration plan with `ru`, `uk`, and `en` translations under `src/i18n/`.
+- Live workout state is persisted in `localStorage` under `walking-app-active-workout` so reloads can restore workout metrics before the user reconnects Bluetooth.
+- FTMS control-point support sends start/stop/speed commands when available and gracefully degrades when the treadmill does not expose the characteristic.
+- The detail screen now supports deleting a saved workout after confirmation.
+- ESLint and Prettier configs are part of the delivered tooling.
 
 ---
 
@@ -21,6 +32,7 @@ Create or modify:
 - `src/main.tsx`: React entry.
 - `src/index.css`: Tailwind entry and global mobile styles.
 - `src/vite-env.d.ts`: Vite and Web Bluetooth declarations.
+- `src/app/router.tsx`: TanStack Router route tree.
 - `src/domain/workout.ts`: workout types and summary helpers.
 - `src/domain/date-time.ts`: Temporal and Intl date helpers.
 - `src/domain/stats.ts`: period filtering and aggregate calculations.
@@ -41,7 +53,9 @@ Create or modify:
 - `src/test/setup.ts`: Vitest setup for DOM and fake IndexedDB.
 - `src/**/*.test.ts`, `src/**/*.test.tsx`: unit and component tests.
 - `playwright.config.ts`, `tests/workout-flow.spec.ts`: browser smoke test.
-- `manifest.json`, `sw.js`: remove direct service worker use after PWA plugin is configured; keep icons unchanged.
+- `public/icons/`: Vite-served PWA icon assets.
+- `manifest.json`, `sw.js`: removed direct service worker use after PWA plugin is configured; keep icons unchanged.
+- `eslint.config.js`, `.prettierrc`, `.prettierignore`: lint and format tooling.
 
 ## Task 1: Scaffold Vite React TypeScript Tooling
 
@@ -56,7 +70,7 @@ Create or modify:
 - Create: `src/vite-env.d.ts`
 - Modify: `index.html`
 
-- [ ] **Step 1: Install dependencies**
+- [x] **Step 1: Install dependencies**
 
 Run:
 
@@ -67,7 +81,7 @@ npm install -D vitest @testing-library/react @testing-library/jest-dom @testing-
 
 Expected: dependencies are added to `package.json` and `package-lock.json`.
 
-- [ ] **Step 2: Create `package.json` scripts**
+- [x] **Step 2: Create `package.json` scripts**
 
 Use this script block:
 
@@ -84,7 +98,7 @@ Use this script block:
 }
 ```
 
-- [ ] **Step 3: Create TypeScript config**
+- [x] **Step 3: Create TypeScript config**
 
 `tsconfig.json`:
 
@@ -129,7 +143,7 @@ Use this script block:
 }
 ```
 
-- [ ] **Step 4: Create Vite config**
+- [x] **Step 4: Create Vite config**
 
 `vite.config.ts` should initially contain React, Tailwind, Vitest, and complete PWA metadata copied from the existing manifest:
 
@@ -175,7 +189,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 5: Replace `index.html` with Vite entry**
+- [x] **Step 5: Replace `index.html` with Vite entry**
 
 Preserve PWA meta tags and icons, but remove inline app code:
 
@@ -202,7 +216,7 @@ Preserve PWA meta tags and icons, but remove inline app code:
 </html>
 ```
 
-- [ ] **Step 6: Create React smoke entry**
+- [x] **Step 6: Create React smoke entry**
 
 `src/main.tsx`:
 
@@ -264,7 +278,7 @@ textarea {
 /// <reference types="vite/client" />
 ```
 
-- [ ] **Step 7: Run build**
+- [x] **Step 7: Run build**
 
 Run:
 
@@ -274,7 +288,7 @@ npm run build
 
 Expected: build passes and `dist/` is generated.
 
-- [ ] **Step 8: Commit scaffold**
+- [x] **Step 8: Commit scaffold**
 
 Run:
 
@@ -295,7 +309,7 @@ git commit -m "Set up React Vite TypeScript app"
 - Create: `src/domain/export.test.ts`
 - Create: `src/test/setup.ts`
 
-- [ ] **Step 1: Create test setup**
+- [x] **Step 1: Create test setup**
 
 `src/test/setup.ts`:
 
@@ -304,7 +318,7 @@ import '@testing-library/jest-dom/vitest';
 import 'fake-indexeddb/auto';
 ```
 
-- [ ] **Step 2: Write failing domain tests**
+- [x] **Step 2: Write failing domain tests**
 
 `src/domain/workout.test.ts`:
 
@@ -381,7 +395,7 @@ describe('createExportPayload', () => {
 });
 ```
 
-- [ ] **Step 3: Run tests to verify failure**
+- [x] **Step 3: Run tests to verify failure**
 
 Run:
 
@@ -391,7 +405,7 @@ npm run test -- src/domain
 
 Expected: tests fail because domain modules do not exist.
 
-- [ ] **Step 4: Implement domain modules**
+- [x] **Step 4: Implement domain modules**
 
 `src/domain/workout.ts`:
 
@@ -552,7 +566,7 @@ export function createExportPayload(workouts: Workout[], exportedAt = new Date()
 }
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run:
 
@@ -562,7 +576,7 @@ npm run test -- src/domain
 
 Expected: all domain tests pass.
 
-- [ ] **Step 6: Commit domain layer**
+- [x] **Step 6: Commit domain layer**
 
 Run:
 
@@ -578,7 +592,7 @@ git commit -m "Add workout domain calculations"
 - Create: `src/db/workout-repository.ts`
 - Create: `src/db/workout-repository.test.ts`
 
-- [ ] **Step 1: Write failing repository tests**
+- [x] **Step 1: Write failing repository tests**
 
 `src/db/workout-repository.test.ts`:
 
@@ -638,7 +652,7 @@ describe('workout repository', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -648,7 +662,7 @@ npm run test -- src/db
 
 Expected: tests fail because DB modules do not exist.
 
-- [ ] **Step 3: Implement Dexie database**
+- [x] **Step 3: Implement Dexie database**
 
 `src/db/app-db.ts`:
 
@@ -735,7 +749,7 @@ export async function migrateLegacyLocalStorageWorkouts(): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Run repository tests**
+- [x] **Step 4: Run repository tests**
 
 Run:
 
@@ -745,7 +759,7 @@ npm run test -- src/db
 
 Expected: all repository tests pass.
 
-- [ ] **Step 5: Commit persistence layer**
+- [x] **Step 5: Commit persistence layer**
 
 Run:
 
@@ -762,7 +776,7 @@ git commit -m "Add Dexie workout persistence"
 - Create: `src/ui/Toast.tsx`
 - Create: `src/ui/TabBar.tsx`
 
-- [ ] **Step 1: Implement runtime app store**
+- [x] **Step 1: Implement runtime app store**
 
 `src/app/app-store.ts`:
 
@@ -802,7 +816,7 @@ export const useAppStore = create<AppState>((set) => ({
 }));
 ```
 
-- [ ] **Step 2: Implement toast**
+- [x] **Step 2: Implement toast**
 
 `src/ui/Toast.tsx`:
 
@@ -832,7 +846,7 @@ export function Toast() {
 }
 ```
 
-- [ ] **Step 3: Implement tab bar**
+- [x] **Step 3: Implement tab bar**
 
 `src/ui/TabBar.tsx`:
 
@@ -870,7 +884,7 @@ export function TabBar() {
 }
 ```
 
-- [ ] **Step 4: Replace app shell**
+- [x] **Step 4: Replace app shell**
 
 `src/App.tsx`:
 
@@ -911,7 +925,7 @@ export function App() {
 }
 ```
 
-- [ ] **Step 5: Run build**
+- [x] **Step 5: Run build**
 
 Run:
 
@@ -930,7 +944,7 @@ Expected: build fails until the screen components are added in later tasks. Do n
 - Create: `src/features/bluetooth/ftms.ts`
 - Create: `src/ui/TreadmillArt.tsx`
 
-- [ ] **Step 1: Implement Bluetooth helper**
+- [x] **Step 1: Implement Bluetooth helper**
 
 `src/features/bluetooth/ftms.ts`:
 
@@ -952,7 +966,7 @@ export function parseTreadmillData(value: DataView): TreadmillData {
 }
 ```
 
-- [ ] **Step 2: Implement live store**
+- [x] **Step 2: Implement live store**
 
 `src/features/live/live-store.ts`:
 
@@ -1046,7 +1060,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
 }));
 ```
 
-- [ ] **Step 3: Add UI art**
+- [x] **Step 3: Add UI art**
 
 `src/ui/TreadmillArt.tsx`:
 
@@ -1071,7 +1085,7 @@ export function TreadmillArt() {
 }
 ```
 
-- [ ] **Step 4: Implement home screen**
+- [x] **Step 4: Implement home screen**
 
 `src/features/home/HomeScreen.tsx`:
 
@@ -1148,7 +1162,7 @@ function Metric({ label, value, unit, color }: { label: string; value: string; u
 }
 ```
 
-- [ ] **Step 5: Implement live screen**
+- [x] **Step 5: Implement live screen**
 
 `src/features/live/LiveScreen.tsx`:
 
@@ -1233,7 +1247,7 @@ function LiveMetric({ label, value, unit, color }: { label: string; value: strin
 ```
 {% endraw %}
 
-- [ ] **Step 6: Run build and adjust missing imports**
+- [x] **Step 6: Run build and adjust missing imports**
 
 Run:
 
@@ -1267,7 +1281,7 @@ export function WorkoutDetailScreen() {
 }
 ```
 
-- [ ] **Step 7: Commit home and live foundation**
+- [x] **Step 7: Commit home and live foundation**
 
 Run:
 
@@ -1284,7 +1298,7 @@ git commit -m "Build workout app shell and live state"
 - Replace: `src/features/workouts/WorkoutDetailScreen.tsx`
 - Modify: `src/domain/stats.ts`
 
-- [ ] **Step 1: Extend stats helpers**
+- [x] **Step 1: Extend stats helpers**
 
 Append chart bucket helpers to `src/domain/stats.ts`:
 
@@ -1347,7 +1361,7 @@ export function createCalorieBars(workouts: Workout[], period: StatsPeriod, toda
 }
 ```
 
-- [ ] **Step 2: Implement stats screen**
+- [x] **Step 2: Implement stats screen**
 
 `src/features/stats/StatsScreen.tsx`:
 
@@ -1418,7 +1432,7 @@ function Stat({ label, value, unit, color }: { label: string; value: string; uni
 ```
 {% endraw %}
 
-- [ ] **Step 3: Implement history screen**
+- [x] **Step 3: Implement history screen**
 
 `src/features/workouts/HistoryScreen.tsx`:
 
@@ -1484,7 +1498,7 @@ function Metric({ value, unit }: { value: string; unit: string }) {
 }
 ```
 
-- [ ] **Step 4: Implement detail screen**
+- [x] **Step 4: Implement detail screen**
 
 `src/features/workouts/WorkoutDetailScreen.tsx`:
 
@@ -1545,7 +1559,7 @@ function DetailMetric({ label, value }: { label: string; value: string }) {
 }
 ```
 
-- [ ] **Step 5: Add component tests**
+- [x] **Step 5: Add component tests**
 
 Create focused tests:
 
@@ -1562,7 +1576,7 @@ describe('HistoryScreen', () => {
 });
 ```
 
-- [ ] **Step 6: Run tests and build**
+- [x] **Step 6: Run tests and build**
 
 Run:
 
@@ -1573,7 +1587,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 7: Commit screens**
+- [x] **Step 7: Commit screens**
 
 Run:
 
@@ -1589,7 +1603,7 @@ git commit -m "Add workout history stats and detail screens"
 - Modify: `src/domain/export.ts`
 - Create: `src/features/export/export-download.ts`
 
-- [ ] **Step 1: Add download helper**
+- [x] **Step 1: Add download helper**
 
 `src/features/export/export-download.ts`:
 
@@ -1618,7 +1632,7 @@ export function downloadJsonFile(fileName: string, content: string): void {
 }
 ```
 
-- [ ] **Step 2: Implement export button**
+- [x] **Step 2: Implement export button**
 
 `src/features/export/ExportButton.tsx`:
 
@@ -1654,7 +1668,7 @@ export function ExportButton() {
 }
 ```
 
-- [ ] **Step 3: Run tests and build**
+- [x] **Step 3: Run tests and build**
 
 Run:
 
@@ -1665,7 +1679,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 4: Commit export**
+- [x] **Step 4: Commit export**
 
 Run:
 
@@ -1683,11 +1697,11 @@ git commit -m "Add workout JSON export"
 - Create: `tests/workout-flow.spec.ts`
 - Modify: `README.md`
 
-- [ ] **Step 1: Remove manual PWA files**
+- [x] **Step 1: Remove manual PWA files**
 
 Delete `manifest.json` and `sw.js` after confirming `vite-plugin-pwa` generates equivalent output.
 
-- [ ] **Step 2: Add Playwright config**
+- [x] **Step 2: Add Playwright config**
 
 `playwright.config.ts`:
 
@@ -1725,7 +1739,7 @@ test('records a simulated workout and opens its detail screen', async ({ page })
 });
 ```
 
-- [ ] **Step 3: Update README**
+- [x] **Step 3: Update README**
 
 Document:
 
@@ -1754,7 +1768,7 @@ npm run test:e2e
 Completed workouts are stored in IndexedDB through Dexie. On first launch, existing `localStorage` workouts from `treadmill_v2` are copied into Dexie without deleting the old value.
 ````
 
-- [ ] **Step 4: Run full verification**
+- [x] **Step 4: Run full verification**
 
 Run:
 
@@ -1766,7 +1780,7 @@ npm run test:e2e
 
 Expected: all checks pass.
 
-- [ ] **Step 5: Commit final cleanup**
+- [x] **Step 5: Commit final cleanup**
 
 Run:
 
@@ -1789,4 +1803,4 @@ Spec coverage:
 - Current screens and behavior: Task 5 and Task 6.
 - Tests and smoke verification: Tasks 2, 3, 6, and 8.
 
-No import, sync, backend, account, edit, delete, or redesign tasks are included.
+No import, sync, backend, account, edit, or redesign tasks are included. Workout deletion was added after the original scope and is now part of the delivered app.
