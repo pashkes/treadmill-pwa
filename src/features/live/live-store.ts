@@ -180,6 +180,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     }),
   stopAndSave: async () => {
     const state = get();
+    if (state.ftmsConnection) void state.ftmsConnection.stopWorkout();
     const workout: Workout = {
       id: Date.now(),
       date: state.startedDate ?? todayString(),
