@@ -4,6 +4,7 @@ import { db } from './app-db';
 import {
   addWorkout,
   createWorkoutExportPayload,
+  deleteWorkout,
   getWorkout,
   listWorkouts,
   migrateLegacyLocalStorageWorkouts,
@@ -34,6 +35,15 @@ describe('workout repository', () => {
 
     expect((await listWorkouts()).map((item) => item.id)).toEqual([101, 100]);
     expect(await getWorkout(100)).toEqual(workout);
+  });
+
+  it('deletes a persisted workout', async () => {
+    await addWorkout(workout);
+
+    await deleteWorkout(workout.id);
+
+    expect(await getWorkout(workout.id)).toBeUndefined();
+    expect(await listWorkouts()).toEqual([]);
   });
 
   it('migrates valid legacy localStorage data once without deleting it', async () => {

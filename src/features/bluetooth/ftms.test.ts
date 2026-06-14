@@ -18,6 +18,12 @@ describe('parseTreadmillData', () => {
     expect(data).toEqual({ speedKph: 6, distanceKm: 2 });
   });
 
+  it('parses elapsed time and calories when the treadmill reports them', () => {
+    const data = parseTreadmillData(view([0x84, 0x04, 0x58, 0x02, 0xe8, 0x03, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x00, 0x7d, 0x00]));
+
+    expect(data).toEqual({ speedKph: 6, distanceKm: 1, kcal: 42, elapsedSeconds: 125 });
+  });
+
   it('omits speed when the treadmill packet does not include instantaneous speed', () => {
     const data = parseTreadmillData(view([0x01, 0x00]));
 

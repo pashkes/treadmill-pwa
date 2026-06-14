@@ -1,13 +1,15 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
+import { deleteWorkout } from '../../db/workout-repository';
 import { formatCadence, formatDuration, formatPace, formatPaceSeconds, formatSpeed, workoutSeconds } from '../../domain/workout';
 
 export function WorkoutDetailScreen() {
   const selectedWorkoutId = useAppStore((state) => state.selectedWorkoutId);
   const showScreen = useAppStore((state) => state.showScreen);
+  const showToast = useAppStore((state) => state.showToast);
   const workout = useLiveQuery(() => (selectedWorkoutId ? db.workouts.get(selectedWorkoutId) : undefined), [selectedWorkoutId]);
 
   if (!workout) {
@@ -27,6 +29,15 @@ export function WorkoutDetailScreen() {
   const cadence = formatCadence(workout);
   const topSpeed = workout.maxSpeed ? workout.maxSpeed.toFixed(1) : speed;
   const fastestPace = workout.maxSpeed ? formatPaceSeconds((60 / workout.maxSpeed) * 60) : pace;
+  const workoutId = workout.id;
+
+  async function handleDelete() {
+    if (!window.confirm('Удалить тренировку?')) return;
+
+    await deleteWorkout(workoutId);
+    showToast('Тренировка удалена');
+    showScreen('history');
+  }
 
   return (
     <main className="min-h-dvh bg-black pb-8 pt-16 text-white">
@@ -34,7 +45,14 @@ export function WorkoutDetailScreen() {
         <button type="button" className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-neutral-900" onClick={() => showScreen('history')} aria-label="Назад">
           <ChevronLeft size={24} />
         </button>
-        <div />
+        <button
+          type="button"
+          className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-red-500/30 bg-red-500/10 text-red-500"
+          onClick={handleDelete}
+          aria-label="Удалить тренировку"
+        >
+          <Trash2 size={20} />
+        </button>
       </div>
       <section className="px-8 pt-8">
         <div className="mb-2 text-[15px] font-extrabold text-neutral-400">Workout</div>

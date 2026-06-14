@@ -1,5 +1,3 @@
-import { Pause, Play } from 'lucide-react';
-import { useEffect } from 'react';
 import { useAppStore } from '../../app/app-store';
 import { formatDuration, formatPaceSeconds } from '../../domain/workout';
 import { useLiveStore } from './live-store';
@@ -7,12 +5,7 @@ import { useLiveStore } from './live-store';
 export function LiveScreen() {
   const showScreen = useAppStore((state) => state.showScreen);
   const showToast = useAppStore((state) => state.showToast);
-  const { seconds, km, kcal, steps, speedKph, isPaused, tick, pause, changeSpeed, stopAndSave } = useLiveStore();
-
-  useEffect(() => {
-    const timer = window.setInterval(tick, 1000);
-    return () => window.clearInterval(timer);
-  }, [tick]);
+  const { seconds, km, kcal, steps, speedKph, changeSpeed, stopAndSave } = useLiveStore();
 
   const timer = formatDuration(seconds).slice(3);
   const pace = speedKph > 0.1 ? formatPaceSeconds((60 / speedKph) * 60) : '--';
@@ -22,14 +15,7 @@ export function LiveScreen() {
       <header className="flex items-center justify-between px-4 pt-14">
         <div />
         <div className="text-base font-bold text-neutral-400">Свободная тренировка</div>
-        <button
-          type="button"
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-900"
-          onClick={pause}
-          aria-label={isPaused ? 'Продолжить' : 'Пауза'}
-        >
-          {isPaused ? <Play size={20} /> : <Pause size={20} />}
-        </button>
+        <div className="h-10 w-10" />
       </header>
       <div className="mt-2 text-center text-[11px] font-bold uppercase tracking-[2px] text-neutral-700">Время</div>
       <div className="my-1 text-center text-[76px] font-extrabold leading-none tracking-normal tabular-nums">{timer}</div>

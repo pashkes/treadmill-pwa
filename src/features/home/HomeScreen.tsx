@@ -40,7 +40,7 @@ export function HomeScreen() {
     try {
       const connection = await connectFtms(
         (data) => {
-          setTreadmillData(data.speedKph, data.distanceKm);
+          setTreadmillData(data);
         },
         () => {
           setFtmsConnection(null);

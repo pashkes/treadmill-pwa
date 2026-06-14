@@ -24,7 +24,7 @@ describe('live-store', () => {
   it('saves workouts shorter than thirty seconds when they have elapsed time', async () => {
     useLiveStore.getState().setConnection(true, 'Blue treadmill');
     useLiveStore.getState().start();
-    useLiveStore.getState().tick();
+    useLiveStore.getState().setTreadmillData({ elapsedSeconds: 1 });
 
     const saved = await useLiveStore.getState().stopAndSave();
 
@@ -49,11 +49,16 @@ describe('live-store', () => {
     expect(useLiveStore.getState().startedAt).not.toBeNull();
   });
 
-  it('does not advance live metrics while disconnected', () => {
+  it('does not simulate live metrics on timer ticks', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().setTreadmillData({ speedKph: 6 });
+    useLiveStore.getState().start();
+
     useLiveStore.getState().tick();
 
     expect(useLiveStore.getState().seconds).toBe(0);
     expect(useLiveStore.getState().km).toBe(0);
+    expect(useLiveStore.getState().kcal).toBe(0);
     expect(useLiveStore.getState().steps).toBe(0);
   });
 
@@ -74,21 +79,23 @@ describe('live-store', () => {
     expect(saved?.time).toBe('23:59');
   });
 
-  it('uses treadmill-reported distance when available', () => {
-    useLiveStore.getState().setTreadmillData(6, 1.25);
+  it('uses treadmill-reported metrics when available', () => {
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 1.25, kcal: 80, elapsedSeconds: 120 });
 
     expect(useLiveStore.getState().speedKph).toBe(6);
     expect(useLiveStore.getState().km).toBe(1.25);
-    expect(useLiveStore.getState().kcal).toBe(81.25);
+    expect(useLiveStore.getState().kcal).toBe(80);
+    expect(useLiveStore.getState().seconds).toBe(120);
   });
 
-  it('keeps the last live metrics when a treadmill packet omits speed and distance', () => {
-    useLiveStore.getState().setTreadmillData(6, 1.25);
+  it('keeps previous values when a treadmill packet omits fields', () => {
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 1.25, kcal: 80, elapsedSeconds: 120 });
 
-    useLiveStore.getState().setTreadmillData();
+    useLiveStore.getState().setTreadmillData({});
 
     expect(useLiveStore.getState().speedKph).toBe(6);
     expect(useLiveStore.getState().km).toBe(1.25);
-    expect(useLiveStore.getState().kcal).toBe(81.25);
+    expect(useLiveStore.getState().kcal).toBe(80);
+    expect(useLiveStore.getState().seconds).toBe(120);
   });
 });
