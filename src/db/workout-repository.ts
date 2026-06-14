@@ -50,6 +50,10 @@ export async function addWorkout(workout: Workout): Promise<number> {
   return db.workouts.put(workout);
 }
 
+export async function deleteWorkout(id: number): Promise<void> {
+  await db.workouts.delete(id);
+}
+
 export async function bulkPutWorkouts(workouts: Workout[]): Promise<number> {
   return db.workouts.bulkPut(workouts);
 }

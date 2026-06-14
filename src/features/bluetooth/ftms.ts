@@ -4,6 +4,8 @@ export const TREADMILL_DATA_CHARACTERISTIC = '00002acd-0000-1000-8000-00805f9b34
 export type TreadmillData = {
   speedKph?: number;
   distanceKm?: number;
+  kcal?: number;
+  elapsedSeconds?: number;
 };
 
 export type FtmsConnection = {
@@ -38,6 +40,24 @@ export function parseTreadmillData(value: DataView): TreadmillData {
 
   if ((flags & 0x0004) && canRead(value, offset, 3)) {
     data.distanceKm = (value.getUint8(offset) | (value.getUint8(offset + 1) << 8) | (value.getUint8(offset + 2) << 16)) / 1000;
+    offset += 3;
+  }
+
+  if (flags & 0x0008) offset += 4; // inclination and ramp angle setting
+  if (flags & 0x0010) offset += 4; // elevation gain
+  if (flags & 0x0020) offset += 1; // instantaneous pace
+  if (flags & 0x0040) offset += 1; // average pace
+
+  if ((flags & 0x0080) && canRead(value, offset, 5)) {
+    data.kcal = value.getUint16(offset, true);
+    offset += 5;
+  }
+
+  if (flags & 0x0100) offset += 1; // heart rate
+  if (flags & 0x0200) offset += 1; // metabolic equivalent
+
+  if ((flags & 0x0400) && canRead(value, offset, 2)) {
+    data.elapsedSeconds = value.getUint16(offset, true);
   }
 
   return data;

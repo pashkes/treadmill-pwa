@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { addWorkout } from '../../db/workout-repository';
 import { nowTimeString, todayString } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
-import type { FtmsConnection } from '../bluetooth/ftms';
+import type { FtmsConnection, TreadmillData } from '../bluetooth/ftms';
 
 type LiveState = {
   isConnected: boolean;
@@ -20,7 +20,7 @@ type LiveState = {
   setConnection: (isConnected: boolean, deviceName: string | null) => void;
   setFtmsConnection: (connection: FtmsConnection | null) => void;
   setSpeed: (speedKph: number) => void;
-  setTreadmillData: (speedKph?: number, distanceKm?: number) => void;
+  setTreadmillData: (data: TreadmillData) => void;
   start: () => boolean;
   tick: () => void;
   pause: () => void;
@@ -44,16 +44,16 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   setConnection: (isConnected, deviceName) => set({ isConnected, deviceName }),
   setFtmsConnection: (ftmsConnection) => set({ ftmsConnection }),
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
-  setTreadmillData: (speedKph, distanceKm) =>
+  setTreadmillData: (data) =>
     set((state) => {
-      const nextSpeedKph = speedKph ?? state.speedKph;
-      const nextKm = distanceKm ?? state.km;
+      const speedKph = data.speedKph ?? state.speedKph;
 
       return {
-        speedKph: nextSpeedKph,
-        maxSpeed: speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, speedKph),
-        km: nextKm,
-        kcal: nextKm * 65,
+        speedKph,
+        maxSpeed: data.speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, data.speedKph),
+        seconds: data.elapsedSeconds ?? state.seconds,
+        km: data.distanceKm ?? state.km,
+        kcal: data.kcal ?? state.kcal,
       };
     }),
   start: () => {
@@ -64,7 +64,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       startedDate: todayString(),
       startedAt: nowTimeString(),
       seconds: 0,
-      speedKph: get().isConnected ? get().speedKph : 0,
+      speedKph: get().speedKph,
       maxSpeed: 0,
       km: 0,
       kcal: 0,
@@ -72,18 +72,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     });
     return true;
   },
-  tick: () =>
-    set((state) => {
-      if (state.isPaused || !state.isConnected) return state;
-      const km = state.km + state.speedKph / 3600;
-      return {
-        seconds: state.seconds + 1,
-        maxSpeed: Math.max(state.maxSpeed, state.speedKph),
-        km,
-        steps: state.steps + Math.round(state.speedKph * 1.4),
-        kcal: km * 65,
-      };
-    }),
+  tick: () => undefined,
   pause: () => set((state) => ({ isPaused: !state.isPaused })),
   changeSpeed: (delta) =>
     set((state) => {
