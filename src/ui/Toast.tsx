@@ -9,12 +9,13 @@ export function Toast() {
     if (!toast.visible) return;
     const timer = window.setTimeout(hideToast, 2800);
     return () => window.clearTimeout(timer);
-  }, [hideToast, toast.visible]);
+  }, [hideToast, toast.message, toast.visible]);
 
   return (
     <div
-      className={`fixed left-1/2 top-[60px] z-[9998] -translate-x-1/2 rounded-full bg-neutral-900 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition-transform duration-300 ${
-        toast.visible ? 'translate-y-0' : '-translate-y-20'
+      role="status"
+      className={`fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+24px)] z-[9998] mx-auto max-w-[min(420px,calc(100vw-32px))] rounded-[18px] bg-neutral-900 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-2xl ${
+        toast.visible ? 'block' : 'hidden'
       }`}
     >
       {toast.message}

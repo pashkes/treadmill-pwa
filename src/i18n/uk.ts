@@ -58,6 +58,7 @@ const uk: Translations = {
     finish: 'Завершити тренування',
     workoutSaved: 'Тренування збережено',
     workoutCompleted: 'Тренування завершено',
+    activeWorkoutRestored: 'Тренування відновлено. Підключіть доріжку знову',
     stopConfirm: 'Завершити та зберегти тренування?',
     treadmill: 'Доріжка',
     incline: 'Кут',
