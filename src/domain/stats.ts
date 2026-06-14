@@ -39,6 +39,7 @@ export function getPeriodWorkouts(
   const now = Temporal.PlainDate.from(today);
   return workouts.filter((workout) => {
     const date = Temporal.PlainDate.from(workout.date);
+    if (Temporal.PlainDate.compare(date, now) > 0) return false;
     if (period === 'week') {
       const dayOfWeek = now.dayOfWeek % 7;
       const start = now.subtract({ days: dayOfWeek });
@@ -71,14 +72,22 @@ export function createCalorieBars(
   }
 
   if (period === 'month') {
-    return Array.from({ length: 4 }, (_, index) => {
-      const start = now.subtract({ days: (3 - index) * 7 });
-      const end = start.add({ days: 6 });
+    const monthStart = now.with({ day: 1 });
+    const monthEnd = monthStart.add({ months: 1 }).subtract({ days: 1 });
+    const ranges = [
+      { label: 'Н1', start: monthStart, end: monthStart.with({ day: Math.min(7, monthEnd.day) }) },
+      { label: 'Н2', start: monthStart.with({ day: Math.min(8, monthEnd.day) }), end: monthStart.with({ day: Math.min(14, monthEnd.day) }) },
+      { label: 'Н3', start: monthStart.with({ day: Math.min(15, monthEnd.day) }), end: monthStart.with({ day: Math.min(21, monthEnd.day) }) },
+      { label: 'Н4', start: monthStart.with({ day: Math.min(22, monthEnd.day) }), end: monthEnd },
+    ];
+
+    return ranges.map(({ label, start, end }) => {
       return {
-        label: `Н${index + 1}`,
+        label,
         value: workouts
           .filter((workout) => {
             const date = Temporal.PlainDate.from(workout.date);
+            if (Temporal.PlainDate.compare(date, now) > 0) return false;
             return Temporal.PlainDate.compare(date, start) >= 0 && Temporal.PlainDate.compare(date, end) <= 0;
           })
           .reduce((sum, workout) => sum + workout.kcal, 0),
