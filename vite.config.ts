@@ -25,13 +25,13 @@ export default defineConfig({
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
-          { src: 'icons/icon-180.png', sizes: '180x180', type: 'image/png' }
+          { src: 'icons/icon-180.png', sizes: '180x180', type: 'image/png' },
         ],
         screenshots: [],
         categories: ['health', 'fitness'],
-        lang: 'ru'
-      }
-    })
+        lang: 'ru',
+      },
+    }),
   ],
   test: {
     environment: 'jsdom',
@@ -43,6 +43,6 @@ export default defineConfig({
     },
     setupFiles: './src/test/setup.ts',
     globals: true,
-    exclude: ['node_modules/**', 'dist/**', 'tests/**', '.worktrees/**']
-  }
+    exclude: ['node_modules/**', 'dist/**', 'tests/**', '.worktrees/**'],
+  },
 });

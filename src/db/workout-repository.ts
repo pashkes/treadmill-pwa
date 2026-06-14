@@ -69,7 +69,7 @@ export async function createWorkoutExportPayload(): Promise<WorkoutExportPayload
 export async function migrateLegacyLocalStorageWorkouts(): Promise<void> {
   if (localStorage.getItem(MIGRATION_KEY) === '1') return;
 
-  let parsed: unknown = [];
+  let parsed: unknown;
   try {
     const raw = localStorage.getItem(LEGACY_KEY);
     parsed = raw ? JSON.parse(raw) : [];

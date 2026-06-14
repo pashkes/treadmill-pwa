@@ -87,12 +87,12 @@ export function HomeScreen() {
         <div className="flex items-center justify-between rounded-[14px] bg-neutral-800 px-3 py-2.5">
           <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">
             <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_#30D158]' : 'bg-red-500'}`} />
-            <span className="truncate">{isConnected ? deviceName ?? 'Подключено' : 'Дорожка не подключена...'}</span>
+            <span className="truncate">{isConnected ? (deviceName ?? 'Подключено') : 'Дорожка не подключена...'}</span>
           </div>
           <button
             type="button"
             className={`rounded-full px-4 py-2 text-[13px] font-bold text-white ${isConnected ? 'border border-neutral-700 bg-neutral-900 text-neutral-400' : 'bg-[#5B5BF6]'}`}
-            onClick={toggleConnect}
+            onClick={() => void toggleConnect()}
           >
             {isConnected ? 'Отключить' : 'Подключить'}
           </button>
