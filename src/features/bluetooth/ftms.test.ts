@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseTreadmillData } from './ftms';
+import { FtmsConnectionError, connectFtms, parseTreadmillData } from './ftms';
 
 function view(bytes: number[]): DataView {
   return new DataView(Uint8Array.from(bytes).buffer);
@@ -34,5 +34,19 @@ describe('parseTreadmillData', () => {
     const data = parseTreadmillData(view([0x01, 0x00]));
 
     expect(data).toEqual({});
+  });
+});
+
+describe('connectFtms', () => {
+  it('throws a typed error when Web Bluetooth is unavailable', async () => {
+    Object.defineProperty(navigator, 'bluetooth', {
+      value: undefined,
+      configurable: true,
+    });
+
+    await expect(connectFtms(() => undefined, () => undefined)).rejects.toMatchObject({
+      code: 'bluetoothUnsupported',
+    });
+    await expect(connectFtms(() => undefined, () => undefined)).rejects.toBeInstanceOf(FtmsConnectionError);
   });
 });

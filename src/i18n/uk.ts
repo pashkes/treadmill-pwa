@@ -17,6 +17,13 @@ const uk: Translations = {
     caloriesToday: 'Калорії сьогодні',
     distanceToday: 'Дистанція сьогодні',
     steps: 'Кроки',
+    bluetoothUnsupported: 'Потрібен Chrome (Android / Desktop)',
+    connectFailed: 'Не вдалося підключитися до доріжки',
+  },
+  export: {
+    label: 'Експорт тренувань',
+    ready: 'Експорт готовий',
+    failed: 'Не вдалося експортувати тренування',
   },
   units: {
     kcal: 'ккал',

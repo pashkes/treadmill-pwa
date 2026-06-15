@@ -16,12 +16,24 @@ export type TreadmillData = {
 };
 
 export type FtmsConnection = {
-  deviceName: string;
+  deviceName: string | null;
   startWorkout: () => Promise<void>;
   stopWorkout: () => Promise<void>;
   writeSpeed: (speedKph: number) => Promise<void>;
   disconnect: () => void;
 };
+
+export type FtmsConnectionErrorCode = 'bluetoothUnsupported' | 'connectFailed';
+
+export class FtmsConnectionError extends Error {
+  code: FtmsConnectionErrorCode;
+
+  constructor(code: FtmsConnectionErrorCode) {
+    super(code);
+    this.name = 'FtmsConnectionError';
+    this.code = code;
+  }
+}
 
 type GattCharacteristicEvent = Event & {
   target: EventTarget & {
@@ -77,7 +89,7 @@ export function parseTreadmillData(value: DataView): TreadmillData {
 
 export async function connectFtms(onData: (data: TreadmillData) => void, onDisconnect: () => void): Promise<FtmsConnection> {
   if (!navigator.bluetooth) {
-    throw new Error('Нужен Chrome (Android / Desktop)');
+    throw new FtmsConnectionError('bluetoothUnsupported');
   }
 
   const device = await navigator.bluetooth.requestDevice({
@@ -87,7 +99,7 @@ export async function connectFtms(onData: (data: TreadmillData) => void, onDisco
   device.addEventListener('gattserverdisconnected', onDisconnect);
 
   const server = await device.gatt?.connect();
-  if (!server) throw new Error('Не удалось подключиться к дорожке');
+  if (!server) throw new FtmsConnectionError('connectFailed');
 
   const service = await server.getPrimaryService(FTMS_SERVICE);
 
@@ -122,7 +134,7 @@ export async function connectFtms(onData: (data: TreadmillData) => void, onDisco
   }
 
   return {
-    deviceName: device.name || 'Дорожка',
+    deviceName: device.name || null,
     startWorkout: () => writeControlPoint(new Uint8Array([OP_START_RESUME])),
     stopWorkout: () => writeControlPoint(new Uint8Array([OP_STOP_PAUSE, 0x01])),
     writeSpeed: async (speedKph: number) => {

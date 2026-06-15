@@ -24,9 +24,10 @@ Treadmill Workout PWA is an offline-first React app for recording treadmill work
 - `src/app/router.tsx`: TanStack Router route tree.
 - `src/db/app-db.ts`: Dexie database definition.
 - `src/db/workout-repository.ts`: persistence API, legacy migration, export payload read path, and deletion.
+- `src/db/workout-live-queries.ts`: Dexie `useLiveQuery` hooks for reactive workout reads used by screens.
 - `src/domain/`: pure workout calculations, stats, date helpers, and export payload creation.
 - `src/features/bluetooth/ftms.ts`: FTMS characteristic parsing and Web Bluetooth connection helper.
-- `src/features/live/`: active workout screen and live workout store.
+- `src/features/live/`: active workout screen, runtime store, reload recovery storage, and pure live workout calculations.
 - `src/features/home/`: home screen and daily totals.
 - `src/features/stats/`: stats screen and chart rendering.
 - `src/features/workouts/`: history and workout detail screens.
@@ -39,7 +40,7 @@ Treadmill Workout PWA is an offline-first React app for recording treadmill work
 
 Completed workouts are stored in Dexie and exposed through repository functions in `src/db/workout-repository.ts`.
 
-Screens that display persisted workouts read from Dexie with `useLiveQuery`, so UI updates after add/delete operations without a separate fetch cache.
+Screens that display persisted workouts read from Dexie through hooks in `src/db/workout-live-queries.ts`, so UI updates after add/delete operations without a separate fetch cache.
 
 The legacy static app stored completed workouts in `localStorage` under `treadmill_v2`. On first launch after migration, `migrateLegacyLocalStorageWorkouts()` reads that key, normalizes valid workouts, writes them to Dexie, and marks the migration complete with `treadmill_v2_migrated_to_dexie`. The old data is intentionally not deleted.
 
@@ -49,7 +50,7 @@ The active in-progress workout is a special case. It may be temporarily saved un
 
 Zustand stores runtime state only:
 
-- Current screen and selected workout id.
+- Current screen.
 - Toast state.
 - Current stats period.
 - Current locale.
@@ -57,6 +58,8 @@ Zustand stores runtime state only:
 - Live workout metrics and FTMS connection object.
 
 Do not put completed workout collections into Zustand.
+
+Live workout calculations live in pure helpers under `src/features/live/live-workout-calculations.ts`; the Zustand store adapts those helpers to runtime state, active-workout reload persistence, FTMS commands, and final Dexie saves.
 
 ## Routing
 

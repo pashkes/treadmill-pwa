@@ -1,7 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
-import { db } from '../../db/app-db';
+import { useWorkoutsByDateDesc } from '../../db/workout-live-queries';
 import { formatMonthLabel } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
 import { useT } from '../../i18n';
@@ -10,7 +9,7 @@ export function HistoryScreen() {
   const t = useT();
   const locale = useAppStore((state) => state.locale);
   const navigate = useNavigate();
-  const workouts = useLiveQuery(() => db.workouts.orderBy('date').reverse().toArray(), []) ?? [];
+  const workouts = useWorkoutsByDateDesc();
 
   if (workouts.length === 0) {
     return (

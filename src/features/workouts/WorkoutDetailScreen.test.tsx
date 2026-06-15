@@ -29,11 +29,16 @@ describe('WorkoutDetailScreen', () => {
     await addWorkout(workout);
     useAppStore.setState({
       screen: 'detail',
-      selectedWorkoutId: workout.id,
       statsPeriod: 'week',
       toast: { message: '', visible: false },
       locale: 'ru',
     });
+  });
+
+  it('loads the selected workout from the route id instead of app store state', async () => {
+    render(<RouterProvider router={router} />);
+
+    expect(await screen.findByText('Свободная тренировка')).toBeVisible();
   });
 
   it('deletes the saved workout after confirmation', async () => {

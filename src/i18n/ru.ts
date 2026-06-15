@@ -17,6 +17,13 @@ const ru: Translations = {
     caloriesToday: 'Калории сегодня',
     distanceToday: 'Дистанция сегодня',
     steps: 'Шаги',
+    bluetoothUnsupported: 'Нужен Chrome (Android / Desktop)',
+    connectFailed: 'Не удалось подключиться к дорожке',
+  },
+  export: {
+    label: 'Экспорт тренировок',
+    ready: 'Экспорт готов',
+    failed: 'Не удалось экспортировать тренировки',
   },
   units: {
     kcal: 'ккал',

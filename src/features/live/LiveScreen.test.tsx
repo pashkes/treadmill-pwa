@@ -14,7 +14,6 @@ describe('LiveScreen', () => {
     window.localStorage.clear();
     useAppStore.setState({
       screen: 'live',
-      selectedWorkoutId: null,
       statsPeriod: 'week',
       toast: { message: '', visible: false },
       locale: 'ru',
