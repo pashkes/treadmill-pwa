@@ -37,6 +37,25 @@ describe('live-store', () => {
     expect(await db.workouts.count()).toBe(1);
   });
 
+  it('saves workouts with recorded metrics even when elapsed time was not reported', async () => {
+    useLiveStore.setState({
+      startedDate: '2026-06-14',
+      startedAt: '12:00',
+      seconds: 0,
+      km: 0.4,
+      kcal: 38,
+      steps: 512,
+      maxSpeed: 6,
+      hasStartedMoving: true,
+    });
+
+    const saved = await useLiveStore.getState().stopAndSave();
+
+    expect(saved?.seconds).toBe(240);
+    expect(saved?.min).toBe(4);
+    expect(await db.workouts.count()).toBe(1);
+  });
+
   it('does not start a workout before the treadmill is connected', () => {
     const started = useLiveStore.getState().start();
 
