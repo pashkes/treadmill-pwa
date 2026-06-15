@@ -56,6 +56,30 @@ describe('live-store', () => {
     expect(await db.workouts.count()).toBe(1);
   });
 
+  it('ends an empty active workout without keeping live state stuck', async () => {
+    useLiveStore.setState({
+      isConnected: true,
+      deviceName: 'Blue treadmill',
+      startedDate: '2026-06-14',
+      startedAt: '12:00',
+      seconds: 0,
+      speedKph: 0,
+      maxSpeed: 0,
+      km: 0,
+      kcal: 0,
+      steps: 0,
+      hasStartedMoving: false,
+    });
+
+    const saved = await useLiveStore.getState().stopAndSave();
+
+    expect(saved).toBeNull();
+    expect(await db.workouts.count()).toBe(0);
+    expect(useLiveStore.getState().startedAt).toBeNull();
+    expect(useLiveStore.getState().startedDate).toBeNull();
+    expect(useLiveStore.getState().hasStartedMoving).toBe(false);
+  });
+
   it('does not start a workout before the treadmill is connected', () => {
     const started = useLiveStore.getState().start();
 
