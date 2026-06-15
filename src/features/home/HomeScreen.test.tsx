@@ -39,6 +39,7 @@ describe('HomeScreen', () => {
       steps: 0,
       inclinePercent: 0,
       hasStartedMoving: false,
+      restoredFromStorage: false,
       autoStopRequested: false,
     });
   });

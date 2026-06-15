@@ -88,6 +88,7 @@ const en = {
   },
   errors: {
     migrationFailed: 'Failed to migrate old workouts',
+    saveWorkoutFailed: 'Failed to save workout',
   },
 };
 
