@@ -39,9 +39,32 @@ export function formatPace(workout: WorkoutLike): string {
 }
 
 export function formatSpeed(workout: WorkoutLike): string {
+  const speed = averageSpeedKph(workout);
+  return speed === null ? '--' : speed.toFixed(1);
+}
+
+function averageSpeedKph(workout: WorkoutLike): number | null {
   const seconds = workoutSeconds(workout);
-  if (!workout.km || !seconds) return '--';
-  return (workout.km / (seconds / 3600)).toFixed(1);
+  if (!workout.km || !seconds) return null;
+  return workout.km / (seconds / 3600);
+}
+
+function topSpeedKph(workout: WorkoutLike): number | null {
+  const averageSpeed = averageSpeedKph(workout);
+  const maxSpeed = workout.maxSpeed && workout.maxSpeed > 0 ? workout.maxSpeed : null;
+  if (averageSpeed === null) return maxSpeed;
+  if (maxSpeed === null) return averageSpeed;
+  return Math.max(maxSpeed, averageSpeed);
+}
+
+export function formatTopSpeed(workout: WorkoutLike): string {
+  const speed = topSpeedKph(workout);
+  return speed === null ? '--' : speed.toFixed(1);
+}
+
+export function formatFastestPace(workout: WorkoutLike): string {
+  const speed = topSpeedKph(workout);
+  return speed === null ? formatPace(workout) : formatPaceSeconds((60 / speed) * 60);
 }
 
 export function formatCadence(workout: WorkoutLike): string {
