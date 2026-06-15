@@ -51,6 +51,14 @@ describe('HomeScreen', () => {
     expect(screen.getByRole('button', { name: 'GO' })).toBeDisabled();
   });
 
+  it('shows connection status while auto-connect is in progress', () => {
+    useLiveStore.setState({ connectionStatus: 'connecting' });
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByText('Подключение...')).toBeVisible();
+  });
+
   it('starts a live workout after the treadmill is connected', async () => {
     useLiveStore.getState().setConnection(true, 'Blue treadmill');
     useAppStore.getState().showToast('Blue treadmill');

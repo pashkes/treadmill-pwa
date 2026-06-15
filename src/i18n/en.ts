@@ -18,6 +18,14 @@ const en = {
     bluetoothUnsupported: 'Chrome is required (Android / Desktop)',
     connectFailed: 'Failed to connect to treadmill',
   },
+  bluetooth: {
+    connected: 'Connected',
+    connecting: 'Connecting...',
+    disconnected: 'Not connected',
+    error: 'Connection failed',
+    savedDeviceUnavailable: 'Auto-connect is not supported in this browser',
+    savedDeviceNotFound: 'Saved treadmill permission was removed',
+  },
   export: {
     label: 'Export workouts',
     ready: 'Export ready',

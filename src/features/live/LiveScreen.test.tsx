@@ -51,6 +51,18 @@ describe('LiveScreen', () => {
     expect(screen.getByText('2.5')).toBeVisible();
   });
 
+  it('shows disconnected treadmill status on live screen', () => {
+    useLiveStore.setState({
+      connectionStatus: 'disconnected',
+      isConnected: false,
+      deviceName: null,
+    });
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByText('Не подключено')).toBeVisible();
+  });
+
   it('removes broken speed controls and confirms manual finish', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<RouterProvider router={router} />);

@@ -20,6 +20,14 @@ const uk: Translations = {
     bluetoothUnsupported: 'Потрібен Chrome (Android / Desktop)',
     connectFailed: 'Не вдалося підключитися до доріжки',
   },
+  bluetooth: {
+    connected: 'Підключено',
+    connecting: 'Підключення...',
+    disconnected: 'Не підключено',
+    error: 'Помилка підключення',
+    savedDeviceUnavailable: 'Автопідключення не підтримується в цьому браузері',
+    savedDeviceNotFound: 'Доступ до збереженої доріжки видалено',
+  },
   export: {
     label: 'Експорт тренувань',
     ready: 'Експорт готовий',

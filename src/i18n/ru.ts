@@ -20,6 +20,14 @@ const ru: Translations = {
     bluetoothUnsupported: 'Нужен Chrome (Android / Desktop)',
     connectFailed: 'Не удалось подключиться к дорожке',
   },
+  bluetooth: {
+    connected: 'Подключено',
+    connecting: 'Подключение...',
+    disconnected: 'Не подключено',
+    error: 'Ошибка подключения',
+    savedDeviceUnavailable: 'Автоподключение не поддерживается в этом браузере',
+    savedDeviceNotFound: 'Доступ к сохранённой дорожке удалён',
+  },
   export: {
     label: 'Экспорт тренировок',
     ready: 'Экспорт готов',
