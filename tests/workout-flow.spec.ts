@@ -62,6 +62,10 @@ test('records a connected treadmill workout and opens its detail screen', async 
   });
   await expect(page.getByText('01:05')).toBeVisible();
 
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(page.getByText('01:05')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Завершить тренировку' })).toBeVisible();
+
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Завершить тренировку' }).click();
   await page.getByRole('button', { name: 'История' }).click();

@@ -76,6 +76,39 @@ describe('LiveScreen', () => {
     expect(router.state.location.pathname).toBe('/');
   });
 
+  it('shows hardware pause state without saving automatically', async () => {
+    useLiveStore.setState({ isPaused: true, speedKph: 0 });
+
+    render(<RouterProvider router={router} />);
+
+    expect(await screen.findByText('Пауза')).toBeVisible();
+    expect(screen.getByText('Нажмите старт на дорожке, чтобы продолжить')).toBeVisible();
+    expect(await db.workouts.count()).toBe(0);
+    expect(router.state.location.pathname).toBe('/live');
+  });
+
+  it('resumes a paused treadmill session from the pause banner', async () => {
+    const startWorkout = vi.fn().mockResolvedValue(undefined);
+    useLiveStore.setState({
+      isPaused: true,
+      speedKph: 0,
+      ftmsConnection: {
+        deviceName: 'SW / T30EA-0227',
+        startWorkout,
+        stopWorkout: vi.fn().mockResolvedValue(undefined),
+        writeSpeed: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn(),
+      },
+    });
+
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Продолжить' }));
+
+    expect(startWorkout).toHaveBeenCalled();
+    expect(useLiveStore.getState().isPaused).toBe(false);
+  });
+
   it('keeps the screen awake while the live screen is open', async () => {
     const release = vi.fn().mockResolvedValue(undefined);
     const sentinel = Object.assign(new EventTarget(), { release });

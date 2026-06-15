@@ -5,7 +5,8 @@ import type { Workout } from '../../domain/workout';
 import type { FtmsConnection, TreadmillData } from '../bluetooth/ftms';
 
 const ACTIVE_WORKOUT_KEY = 'walking-app-active-workout';
-const ESTIMATED_STEPS_PER_KM = 1280;
+const MOVING_SPEED_KPH = 0.1;
+const ESTIMATED_STRIDE_LENGTH_METERS = 0.78125;
 
 type LiveState = {
   isConnected: boolean;
@@ -31,6 +32,7 @@ type LiveState = {
   start: () => boolean;
   tick: () => void;
   pause: () => void;
+  resume: () => void;
   changeSpeed: (delta: number) => void;
   stopAndSave: () => Promise<Workout | null>;
   clearAutoStopRequest: () => void;
@@ -52,7 +54,7 @@ type PersistedActiveWorkout = Pick<
 >;
 
 function estimateSteps(distanceKm: number): number {
-  return Math.round(Math.max(0, distanceKm) * ESTIMATED_STEPS_PER_KM);
+  return Math.round((Math.max(0, distanceKm) * 1000) / ESTIMATED_STRIDE_LENGTH_METERS);
 }
 
 function persistActiveWorkout(state: LiveState): void {
@@ -115,24 +117,22 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       // Only actual belt movement (speed or distance) signals a started session.
       // The treadmill sends a countdown (elapsedSeconds=5,4,3…) before the belt starts;
       // including elapsedSeconds here would trigger auto-stop before any movement.
-      const hasStartedMoving =
-        state.hasStartedMoving || speedKph > 0.1 || state.km > 0 || (data.distanceKm ?? 0) > 0;
-      const autoStopRequested =
-        state.autoStopRequested ||
-        Boolean(state.startedAt && state.hasStartedMoving && data.speedKph !== undefined && data.speedKph <= 0.1);
+      const hasStartedMoving = state.hasStartedMoving || speedKph > MOVING_SPEED_KPH || state.km > 0 || (data.distanceKm ?? 0) > 0;
+      const isPaused =
+        state.startedAt && state.hasStartedMoving && data.speedKph !== undefined ? data.speedKph <= MOVING_SPEED_KPH : state.isPaused;
 
       // Don't sync the timer until the belt is actually moving — the pre-start countdown
       // uses the same elapsedSeconds field and would show a descending counter on screen.
       const prevSeconds = state.seconds;
-      const newSeconds = hasStartedMoving ? (data.elapsedSeconds ?? state.seconds) : state.seconds;
+      const newSeconds = hasStartedMoving ? Math.max(state.seconds, data.elapsedSeconds ?? state.seconds) : state.seconds;
 
       // Use treadmill distance when it reports a non-zero value.
       // Many treadmills (including SW / T30EA-0227) always transmit distanceKm=0 even
       // when running, so we fall back to integrating speed × elapsed-time delta.
       let km: number;
       if (data.distanceKm !== undefined && data.distanceKm > 0) {
-        km = data.distanceKm;
-      } else if (hasStartedMoving) {
+        km = Math.max(state.km, data.distanceKm);
+      } else if (hasStartedMoving && speedKph > MOVING_SPEED_KPH) {
         const deltaSeconds = Math.min(2, Math.max(0, newSeconds - prevSeconds));
         km = state.km + (speedKph / 3600) * deltaSeconds;
       } else {
@@ -150,7 +150,8 @@ export const useLiveStore = create<LiveState>((set, get) => ({
         steps,
         inclinePercent: data.inclinePercent ?? state.inclinePercent,
         hasStartedMoving,
-        autoStopRequested,
+        isPaused,
+        autoStopRequested: state.autoStopRequested,
       };
 
       persistActiveWorkout({ ...state, ...nextState });
@@ -191,8 +192,24 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     void get().ftmsConnection?.startWorkout();
     return true;
   },
-  tick: () => undefined,
+  tick: () =>
+    set((state) => {
+      if (!state.startedAt || !state.hasStartedMoving || state.isPaused || state.speedKph <= MOVING_SPEED_KPH) return state;
+
+      const km = state.km + state.speedKph / 3600;
+      const nextState = {
+        seconds: state.seconds + 1,
+        km,
+        steps: estimateSteps(km),
+      };
+      persistActiveWorkout({ ...state, ...nextState });
+      return nextState;
+    }),
   pause: () => set((state) => ({ isPaused: !state.isPaused })),
+  resume: () => {
+    set({ isPaused: false, autoStopRequested: false });
+    void get().ftmsConnection?.startWorkout();
+  },
   changeSpeed: (delta) =>
     set((state) => {
       const speedKph = Math.max(0, Math.min(20, state.speedKph + delta));
