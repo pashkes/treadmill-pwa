@@ -1,8 +1,61 @@
-import { describe, expect, it } from 'vitest';
-import { FtmsConnectionError, connectFtms, parseTreadmillData } from './ftms';
+import { describe, expect, it, vi } from 'vitest';
+import { FtmsConnectionError, connectFtms, connectRememberedFtmsDevice, parseTreadmillData } from './ftms';
 
 function view(bytes: number[]): DataView {
   return new DataView(Uint8Array.from(bytes).buffer);
+}
+
+type BluetoothDeviceFixture = {
+  device: BluetoothDevice;
+  treadmillData: BluetoothRemoteGATTCharacteristic & { value?: DataView };
+};
+
+type BluetoothDeviceFixtureOptions = {
+  startTreadmillNotifications?: () => Promise<BluetoothRemoteGATTCharacteristic>;
+};
+
+function createBluetoothDeviceFixture(
+  id = 'device-1',
+  name = 'Blue treadmill',
+  options: BluetoothDeviceFixtureOptions = {},
+): BluetoothDeviceFixture {
+  const treadmillData = Object.assign(new EventTarget(), {
+    startNotifications: () => options.startTreadmillNotifications?.() ?? Promise.resolve(treadmillData),
+    stopNotifications: () => Promise.resolve(treadmillData),
+    writeValueWithoutResponse: () => Promise.resolve(),
+    value: undefined as DataView | undefined,
+  }) satisfies BluetoothRemoteGATTCharacteristic & { value?: DataView };
+
+  const controlPoint = Object.assign(new EventTarget(), {
+    startNotifications: () => Promise.resolve(controlPoint),
+    stopNotifications: () => Promise.resolve(controlPoint),
+    writeValueWithoutResponse: () => Promise.resolve(),
+  }) satisfies BluetoothRemoteGATTCharacteristic;
+
+  const service: BluetoothRemoteGATTService = {
+    getCharacteristic: (characteristic) =>
+      Promise.resolve(characteristic === '00002ad9-0000-1000-8000-00805f9b34fb' ? controlPoint : treadmillData),
+  };
+
+  const server: BluetoothRemoteGATTServer = {
+    connected: true,
+    connect: () => Promise.resolve(server),
+    disconnect: () => undefined,
+    getPrimaryService: () => Promise.resolve(service),
+  };
+
+  const device = Object.assign(new EventTarget(), {
+    id,
+    name,
+    gatt: server,
+    forget: () => Promise.resolve(),
+  }) satisfies BluetoothDevice;
+
+  return { device, treadmillData };
+}
+
+function createBluetoothDevice(id = 'device-1', name = 'Blue treadmill'): BluetoothDevice {
+  return createBluetoothDeviceFixture(id, name).device;
 }
 
 describe('parseTreadmillData', () => {
@@ -58,5 +111,112 @@ describe('connectFtms', () => {
         () => undefined,
       ),
     ).rejects.toBeInstanceOf(FtmsConnectionError);
+  });
+});
+
+describe('connectRememberedFtmsDevice', () => {
+  it('connects to remembered browser-permitted device by id', async () => {
+    const { device } = createBluetoothDeviceFixture('device-1', 'Blue treadmill');
+    Object.defineProperty(navigator, 'bluetooth', {
+      value: {
+        getDevices: () => Promise.resolve([device]),
+      },
+      configurable: true,
+    });
+
+    const connection = await connectRememberedFtmsDevice('device-1', () => undefined, () => undefined);
+
+    expect(connection.deviceId).toBe('device-1');
+    expect(connection.deviceName).toBe('Blue treadmill');
+  });
+
+  it('removes treadmill data listener on disconnect', async () => {
+    const { device, treadmillData } = createBluetoothDeviceFixture();
+    const onData = vi.fn();
+    Object.defineProperty(navigator, 'bluetooth', {
+      value: {
+        getDevices: () => Promise.resolve([device]),
+      },
+      configurable: true,
+    });
+
+    const connection = await connectRememberedFtmsDevice('device-1', onData, () => undefined);
+    treadmillData.value = view([0x00, 0x00, 0x58, 0x02]);
+    treadmillData.dispatchEvent(new Event('characteristicvaluechanged'));
+    expect(onData).toHaveBeenCalledOnce();
+
+    onData.mockClear();
+    connection.disconnect();
+    treadmillData.dispatchEvent(new Event('characteristicvaluechanged'));
+
+    expect(onData).not.toHaveBeenCalled();
+  });
+
+  it('removes treadmill data listener on device disconnect', async () => {
+    const { device, treadmillData } = createBluetoothDeviceFixture();
+    const onData = vi.fn();
+    const onDisconnect = vi.fn();
+    Object.defineProperty(navigator, 'bluetooth', {
+      value: {
+        getDevices: () => Promise.resolve([device]),
+      },
+      configurable: true,
+    });
+
+    await connectRememberedFtmsDevice('device-1', onData, onDisconnect);
+    treadmillData.value = view([0x00, 0x00, 0x58, 0x02]);
+    treadmillData.dispatchEvent(new Event('characteristicvaluechanged'));
+    expect(onData).toHaveBeenCalledOnce();
+
+    onData.mockClear();
+    device.dispatchEvent(new Event('gattserverdisconnected'));
+    treadmillData.dispatchEvent(new Event('characteristicvaluechanged'));
+
+    expect(onDisconnect).toHaveBeenCalledOnce();
+    expect(onData).not.toHaveBeenCalled();
+  });
+
+  it('removes disconnect listener when setup fails', async () => {
+    const startFailure = new Error('notification setup failed');
+    const { device } = createBluetoothDeviceFixture('device-1', 'Blue treadmill', {
+      startTreadmillNotifications: () => Promise.reject(startFailure),
+    });
+    const onDisconnect = vi.fn();
+    Object.defineProperty(navigator, 'bluetooth', {
+      value: {
+        getDevices: () => Promise.resolve([device]),
+      },
+      configurable: true,
+    });
+
+    await expect(connectRememberedFtmsDevice('device-1', () => undefined, onDisconnect)).rejects.toBe(startFailure);
+
+    device.dispatchEvent(new Event('gattserverdisconnected'));
+
+    expect(onDisconnect).not.toHaveBeenCalled();
+  });
+
+  it('throws savedDeviceUnavailable when getDevices is unavailable', async () => {
+    Object.defineProperty(navigator, 'bluetooth', {
+      value: {},
+      configurable: true,
+    });
+
+    await expect(connectRememberedFtmsDevice('device-1', () => undefined, () => undefined)).rejects.toMatchObject({
+      code: 'savedDeviceUnavailable',
+    });
+  });
+
+  it('throws savedDeviceNotFound when remembered device is not in getDevices()', async () => {
+    Object.defineProperty(navigator, 'bluetooth', {
+      value: {
+        getDevices: () => Promise.resolve([createBluetoothDevice('other-device')]),
+      },
+      configurable: true,
+    });
+
+    await expect(connectRememberedFtmsDevice('device-1', () => undefined, () => undefined)).rejects.toMatchObject({
+      code: 'savedDeviceNotFound',
+    });
   });
 });
