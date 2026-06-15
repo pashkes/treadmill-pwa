@@ -58,6 +58,20 @@ function estimateSteps(distanceKm: number): number {
   return Math.round((Math.max(0, distanceKm) * 1000) / ESTIMATED_STRIDE_LENGTH_METERS);
 }
 
+function inferWorkoutSeconds(state: LiveState): number {
+  if (state.seconds > 0) return state.seconds;
+
+  if (state.km > 0 && state.maxSpeed > MOVING_SPEED_KPH) {
+    return Math.max(1, Math.round((state.km / state.maxSpeed) * 3600));
+  }
+
+  if (state.hasStartedMoving || state.km > 0 || state.kcal > 0 || state.steps > 0) {
+    return 1;
+  }
+
+  return 0;
+}
+
 function persistActiveWorkout(state: LiveState): void {
   if (!state.startedAt || !state.startedDate) return;
 
@@ -250,14 +264,15 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   stopAndSave: async () => {
     const state = get();
     if (state.ftmsConnection) void state.ftmsConnection.stopWorkout();
+    const seconds = inferWorkoutSeconds(state);
     const workout: Workout = {
       id: Date.now(),
       date: state.startedDate ?? todayString(),
       time: state.startedAt ?? nowTimeString(),
-      seconds: state.seconds,
+      seconds,
       km: Math.round(state.km * 100) / 100,
       kcal: Math.round(state.kcal),
-      min: Math.round(state.seconds / 60),
+      min: Math.round(seconds / 60),
       steps: Math.round(state.steps),
       maxSpeed: Math.round(state.maxSpeed * 10) / 10,
     };
