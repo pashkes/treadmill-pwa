@@ -23,6 +23,12 @@ const en = {
     ready: 'Export ready',
     failed: 'Failed to export workouts',
   },
+  pwa: {
+    installTitle: 'Install Workout',
+    installDescription: 'Open workouts faster from your home screen.',
+    installAction: 'Install',
+    dismissInstall: 'Dismiss install prompt',
+  },
   units: {
     kcal: 'kcal',
     km: 'km',

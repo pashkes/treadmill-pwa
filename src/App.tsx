@@ -6,6 +6,7 @@ import { migrateLegacyLocalStorageWorkouts } from './db/workout-repository';
 import { TabBar } from './ui/TabBar';
 import { Toast } from './ui/Toast';
 import { useLiveStore } from './features/live/live-store';
+import { InstallPromptBanner } from './features/pwa/InstallPromptBanner';
 import type { ScreenName } from './app/app-store';
 
 function screenFromPath(pathname: string): ScreenName {
@@ -44,6 +45,7 @@ export function App() {
     <div className="min-h-dvh bg-black text-white">
       <Outlet />
       <TabBar />
+      <InstallPromptBanner />
       <Toast />
     </div>
   );
