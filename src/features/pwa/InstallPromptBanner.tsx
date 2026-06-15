@@ -3,9 +3,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '../../app/app-store';
 import { useT } from '../../i18n';
 
+const installPromptDismissedKey = 'walking-app-install-prompt-dismissed';
+
 function isStandaloneDisplayMode() {
   if (typeof window.matchMedia !== 'function') return false;
   return window.matchMedia('(display-mode: standalone)').matches;
+}
+
+function hasDismissedInstallPrompt() {
+  return localStorage.getItem(installPromptDismissedKey) === 'true';
 }
 
 export function InstallPromptBanner() {
@@ -16,7 +22,7 @@ export function InstallPromptBanner() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
-      if (isStandaloneDisplayMode()) return;
+      if (isStandaloneDisplayMode() || hasDismissedInstallPrompt()) return;
       event.preventDefault();
       setInstallPrompt(event);
       setIsVisible(true);
@@ -49,6 +55,12 @@ export function InstallPromptBanner() {
     }
   }, [installPrompt]);
 
+  const dismissInstallPrompt = useCallback(() => {
+    localStorage.setItem(installPromptDismissedKey, 'true');
+    setInstallPrompt(null);
+    setIsVisible(false);
+  }, []);
+
   if (!isVisible || !installPrompt || screen === 'live' || screen === 'detail') return null;
 
   return (
@@ -72,7 +84,7 @@ export function InstallPromptBanner() {
           type="button"
           className="-mr-2 -mt-2 flex size-10 shrink-0 items-center justify-center rounded-full text-neutral-500"
           aria-label={t.pwa.dismissInstall}
-          onClick={() => setIsVisible(false)}
+          onClick={dismissInstallPrompt}
         >
           <X size={18} aria-hidden="true" />
         </button>

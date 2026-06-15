@@ -16,6 +16,7 @@ function createBeforeInstallPromptEvent(prompt = vi.fn().mockResolvedValue(undef
 
 describe('InstallPromptBanner', () => {
   beforeEach(() => {
+    localStorage.clear();
     useAppStore.setState({
       screen: 'home',
       statsPeriod: 'week',
@@ -52,5 +53,26 @@ describe('InstallPromptBanner', () => {
     await waitFor(() => {
       expect(screen.queryByText('Install Workout')).not.toBeInTheDocument();
     });
+  });
+
+  it('does not appear again after the user dismisses it manually', async () => {
+    const user = userEvent.setup();
+    render(<InstallPromptBanner />);
+
+    const { event } = createBeforeInstallPromptEvent();
+    act(() => {
+      window.dispatchEvent(event);
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss install prompt' }));
+
+    expect(screen.queryByText('Install Workout')).not.toBeInTheDocument();
+
+    const { event: nextEvent } = createBeforeInstallPromptEvent();
+    act(() => {
+      window.dispatchEvent(nextEvent);
+    });
+
+    expect(screen.queryByText('Install Workout')).not.toBeInTheDocument();
   });
 });
