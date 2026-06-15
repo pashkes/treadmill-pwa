@@ -26,6 +26,8 @@ describe('HomeScreen', () => {
     useLiveStore.setState({
       isConnected: false,
       deviceName: null,
+      connectionStatus: 'disconnected',
+      connectionError: null,
       isPaused: false,
       startedDate: null,
       startedAt: null,
@@ -63,6 +65,7 @@ describe('HomeScreen', () => {
 
   it('shows a generic connected toast instead of duplicating the treadmill model', async () => {
     vi.mocked(connectFtms).mockResolvedValue({
+      deviceId: 'sw7130ea-0227',
       deviceName: 'SW7130EA-0227',
       startWorkout: vi.fn(),
       stopWorkout: vi.fn(),

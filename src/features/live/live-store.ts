@@ -2,13 +2,17 @@ import { create } from 'zustand';
 import { addWorkout } from '../../db/workout-repository';
 import { nowTimeString, todayString } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
-import type { FtmsConnection, TreadmillData } from '../bluetooth/ftms';
+import type { FtmsConnection, FtmsConnectionErrorCode, TreadmillData } from '../bluetooth/ftms';
 import { clearActiveWorkout, persistActiveWorkout, readActiveWorkout } from './active-workout-storage';
 import { applyTreadmillData, createWorkoutFromLiveState, tickLiveWorkout } from './live-workout-calculations';
+
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 type LiveState = {
   isConnected: boolean;
   deviceName: string | null;
+  connectionStatus: ConnectionStatus;
+  connectionError: FtmsConnectionErrorCode | null;
   isPaused: boolean;
   startedDate: string | null;
   startedAt: string | null;
@@ -24,6 +28,7 @@ type LiveState = {
   restoredFromStorage: boolean;
   autoStopRequested: boolean;
   setConnection: (isConnected: boolean, deviceName: string | null) => void;
+  setConnectionStatus: (connectionStatus: ConnectionStatus, connectionError?: FtmsConnectionErrorCode | null) => void;
   setFtmsConnection: (connection: FtmsConnection | null) => void;
   setSpeed: (speedKph: number) => void;
   setTreadmillData: (data: TreadmillData) => void;
@@ -73,6 +78,8 @@ function resetActiveWorkoutState(): Pick<
 export const useLiveStore = create<LiveState>((set, get) => ({
   isConnected: false,
   deviceName: null,
+  connectionStatus: 'disconnected',
+  connectionError: null,
   isPaused: false,
   startedDate: null,
   startedAt: null,
@@ -87,7 +94,20 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   hasStartedMoving: false,
   restoredFromStorage: false,
   autoStopRequested: false,
-  setConnection: (isConnected, deviceName) => set({ isConnected, deviceName }),
+  setConnection: (isConnected, deviceName) =>
+    set({
+      isConnected,
+      deviceName,
+      connectionStatus: isConnected ? 'connected' : 'disconnected',
+      connectionError: null,
+    }),
+  setConnectionStatus: (connectionStatus, connectionError = null) =>
+    set((state) => ({
+      connectionStatus,
+      connectionError,
+      isConnected: connectionStatus === 'connected',
+      deviceName: connectionStatus === 'disconnected' ? null : state.deviceName,
+    })),
   setFtmsConnection: (ftmsConnection) => set({ ftmsConnection }),
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
   setTreadmillData: (data) =>
@@ -103,6 +123,8 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     set({
       ...activeWorkout,
       isConnected: false,
+      connectionStatus: 'disconnected',
+      connectionError: null,
       isPaused: false,
       ftmsConnection: null,
       restoredFromStorage: true,

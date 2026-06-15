@@ -21,6 +21,8 @@ describe('LiveScreen', () => {
     useLiveStore.setState({
       isConnected: true,
       deviceName: 'SW / T30EA-0227',
+      connectionStatus: 'connected',
+      connectionError: null,
       isPaused: false,
       startedDate: '2026-06-14',
       startedAt: '12:00',
@@ -129,6 +131,7 @@ describe('LiveScreen', () => {
       isPaused: true,
       speedKph: 0,
       ftmsConnection: {
+        deviceId: 'sw-t30ea-0227',
         deviceName: 'SW / T30EA-0227',
         startWorkout,
         stopWorkout: vi.fn().mockResolvedValue(undefined),
