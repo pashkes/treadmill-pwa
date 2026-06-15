@@ -41,6 +41,29 @@ describe('WorkoutDetailScreen', () => {
     expect(await screen.findByText('Свободная тренировка')).toBeVisible();
   });
 
+  it('does not show top speed lower than average speed for rounded short workouts', async () => {
+    const shortWorkout = {
+      ...workout,
+      id: 101,
+      seconds: 31,
+      min: 1,
+      km: 0.01,
+      kcal: 0,
+      steps: 11,
+      maxSpeed: 1,
+    };
+    await db.workouts.clear();
+    await addWorkout(shortWorkout);
+    await router.navigate({ to: '/workouts/$workoutId', params: { workoutId: String(shortWorkout.id) } });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('1.2 км/ч')).toHaveLength(2);
+    });
+    expect(screen.queryByText('60\'00"')).not.toBeInTheDocument();
+  });
+
   it('deletes the saved workout after confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<RouterProvider router={router} />);

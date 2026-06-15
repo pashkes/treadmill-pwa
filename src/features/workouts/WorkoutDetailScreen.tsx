@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '../../app/app-store';
 import { useWorkout } from '../../db/workout-live-queries';
 import { deleteWorkout } from '../../db/workout-repository';
-import { formatCadence, formatDuration, formatPace, formatPaceSeconds, formatSpeed, workoutSeconds } from '../../domain/workout';
+import { formatCadence, formatDuration, formatFastestPace, formatPace, formatSpeed, formatTopSpeed, workoutSeconds } from '../../domain/workout';
 import { useT } from '../../i18n';
 
 export function WorkoutDetailScreen({ workoutId }: { workoutId: number }) {
@@ -33,8 +33,8 @@ export function WorkoutDetailScreen({ workoutId }: { workoutId: number }) {
   const pace = formatPace(workout);
   const speed = formatSpeed(workout);
   const cadence = formatCadence(workout);
-  const topSpeed = workout.maxSpeed ? workout.maxSpeed.toFixed(1) : speed;
-  const fastestPace = workout.maxSpeed ? formatPaceSeconds((60 / workout.maxSpeed) * 60) : pace;
+  const topSpeed = formatTopSpeed(workout);
+  const fastestPace = formatFastestPace(workout);
 
   async function handleDelete() {
     if (!window.confirm(t.detail.deleteConfirm)) return;
