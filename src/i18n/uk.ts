@@ -25,6 +25,12 @@ const uk: Translations = {
     ready: 'Експорт готовий',
     failed: 'Не вдалося експортувати тренування',
   },
+  pwa: {
+    installTitle: 'Установити Workout',
+    installDescription: 'Відкривайте тренування швидше з домашнього екрана.',
+    installAction: 'Установити',
+    dismissInstall: 'Сховати встановлення',
+  },
   units: {
     kcal: 'ккал',
     km: 'км',

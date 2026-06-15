@@ -25,6 +25,12 @@ const ru: Translations = {
     ready: 'Экспорт готов',
     failed: 'Не удалось экспортировать тренировки',
   },
+  pwa: {
+    installTitle: 'Установить Workout',
+    installDescription: 'Открывайте тренировки быстрее с домашнего экрана.',
+    installAction: 'Установить',
+    dismissInstall: 'Скрыть установку',
+  },
   units: {
     kcal: 'ккал',
     km: 'км',
