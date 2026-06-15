@@ -1,19 +1,17 @@
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
-import { db } from '../../db/app-db';
+import { useWorkout } from '../../db/workout-live-queries';
 import { deleteWorkout } from '../../db/workout-repository';
 import { formatCadence, formatDuration, formatPace, formatPaceSeconds, formatSpeed, workoutSeconds } from '../../domain/workout';
 import { useT } from '../../i18n';
 
-export function WorkoutDetailScreen() {
+export function WorkoutDetailScreen({ workoutId }: { workoutId: number }) {
   const t = useT();
   const navigate = useNavigate();
-  const selectedWorkoutId = useAppStore((state) => state.selectedWorkoutId);
   const showToast = useAppStore((state) => state.showToast);
-  const workout = useLiveQuery(() => (selectedWorkoutId ? db.workouts.get(selectedWorkoutId) : undefined), [selectedWorkoutId]);
+  const workout = useWorkout(Number.isFinite(workoutId) ? workoutId : null);
 
   if (!workout) {
     return (
@@ -37,7 +35,6 @@ export function WorkoutDetailScreen() {
   const cadence = formatCadence(workout);
   const topSpeed = workout.maxSpeed ? workout.maxSpeed.toFixed(1) : speed;
   const fastestPace = workout.maxSpeed ? formatPaceSeconds((60 / workout.maxSpeed) * 60) : pace;
-  const workoutId = workout.id;
 
   async function handleDelete() {
     if (!window.confirm(t.detail.deleteConfirm)) return;

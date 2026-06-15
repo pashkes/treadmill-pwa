@@ -1,13 +1,12 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
-import { db } from '../../db/app-db';
+import { useAllWorkouts } from '../../db/workout-live-queries';
 import { createCalorieBars, createFrequencyDays, getPeriodWorkouts, summarizeWorkouts, type StatsPeriod } from '../../domain/stats';
 import { useT } from '../../i18n';
 
 export function StatsScreen() {
   const t = useT();
   const locale = useAppStore((state) => state.locale);
-  const workouts = useLiveQuery(() => db.workouts.toArray(), []) ?? [];
+  const workouts = useAllWorkouts();
   const period = useAppStore((state) => state.statsPeriod);
   const setStatsPeriod = useAppStore((state) => state.setStatsPeriod);
   const filtered = getPeriodWorkouts(workouts, period);

@@ -15,6 +15,13 @@ const en = {
     caloriesToday: 'Calories today',
     distanceToday: 'Distance today',
     steps: 'Steps',
+    bluetoothUnsupported: 'Chrome is required (Android / Desktop)',
+    connectFailed: 'Failed to connect to treadmill',
+  },
+  export: {
+    label: 'Export workouts',
+    ready: 'Export ready',
+    failed: 'Failed to export workouts',
   },
   units: {
     kcal: 'kcal',

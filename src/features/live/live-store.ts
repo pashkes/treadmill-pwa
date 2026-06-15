@@ -3,10 +3,8 @@ import { addWorkout } from '../../db/workout-repository';
 import { nowTimeString, todayString } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
 import type { FtmsConnection, TreadmillData } from '../bluetooth/ftms';
-
-const ACTIVE_WORKOUT_KEY = 'walking-app-active-workout';
-const MOVING_SPEED_KPH = 0.1;
-const ESTIMATED_STRIDE_LENGTH_METERS = 0.78125;
+import { clearActiveWorkout, persistActiveWorkout, readActiveWorkout } from './active-workout-storage';
+import { applyTreadmillData, createWorkoutFromLiveState, tickLiveWorkout } from './live-workout-calculations';
 
 type LiveState = {
   isConnected: boolean;
@@ -38,74 +36,6 @@ type LiveState = {
   stopAndSave: () => Promise<Workout | null>;
   clearAutoStopRequest: () => void;
 };
-
-type PersistedActiveWorkout = Pick<
-  LiveState,
-  | 'deviceName'
-  | 'startedDate'
-  | 'startedAt'
-  | 'seconds'
-  | 'speedKph'
-  | 'maxSpeed'
-  | 'km'
-  | 'kcal'
-  | 'steps'
-  | 'inclinePercent'
-  | 'hasStartedMoving'
->;
-
-function estimateSteps(distanceKm: number): number {
-  return Math.round((Math.max(0, distanceKm) * 1000) / ESTIMATED_STRIDE_LENGTH_METERS);
-}
-
-function inferWorkoutSeconds(state: LiveState): number {
-  if (state.seconds > 0) return state.seconds;
-
-  if (state.km > 0 && state.maxSpeed > MOVING_SPEED_KPH) {
-    return Math.max(1, Math.round((state.km / state.maxSpeed) * 3600));
-  }
-
-  if (state.hasStartedMoving || state.km > 0 || state.kcal > 0 || state.steps > 0) {
-    return 1;
-  }
-
-  return 0;
-}
-
-function persistActiveWorkout(state: LiveState): void {
-  if (!state.startedAt || !state.startedDate) return;
-
-  const payload: PersistedActiveWorkout = {
-    deviceName: state.deviceName,
-    startedDate: state.startedDate,
-    startedAt: state.startedAt,
-    seconds: state.seconds,
-    speedKph: state.speedKph,
-    maxSpeed: state.maxSpeed,
-    km: state.km,
-    kcal: state.kcal,
-    steps: state.steps,
-    inclinePercent: state.inclinePercent,
-    hasStartedMoving: state.hasStartedMoving,
-  };
-  window.localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(payload));
-}
-
-function readActiveWorkout(): PersistedActiveWorkout | null {
-  const raw = window.localStorage.getItem(ACTIVE_WORKOUT_KEY);
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw) as PersistedActiveWorkout;
-  } catch {
-    window.localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-    return null;
-  }
-}
-
-function clearActiveWorkout(): void {
-  window.localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-}
 
 function resetActiveWorkoutState(): Pick<
   LiveState,
@@ -162,62 +92,8 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   setSpeed: (speedKph) => set((state) => ({ speedKph, maxSpeed: Math.max(state.maxSpeed, speedKph) })),
   setTreadmillData: (data) =>
     set((state) => {
-      const speedKph = data.speedKph ?? state.speedKph;
-      // Only actual belt movement (speed or distance) signals a started session.
-      // The treadmill sends a countdown (elapsedSeconds=5,4,3…) before the belt starts;
-      // including elapsedSeconds here would trigger auto-stop before any movement.
-      const hasStartedMoving = state.hasStartedMoving || speedKph > MOVING_SPEED_KPH || state.km > 0 || (data.distanceKm ?? 0) > 0;
-      const isPaused =
-        state.startedAt && state.hasStartedMoving && data.speedKph !== undefined ? data.speedKph <= MOVING_SPEED_KPH : state.isPaused;
-      const isStoppedResetAfterRestore =
-        state.restoredFromStorage &&
-        data.speedKph !== undefined &&
-        data.speedKph <= MOVING_SPEED_KPH &&
-        ((data.elapsedSeconds !== undefined && data.elapsedSeconds < state.seconds) ||
-          (data.distanceKm !== undefined && data.distanceKm < state.km) ||
-          data.kcal === 0);
-
-      // Don't sync the timer until the belt is actually moving — the pre-start countdown
-      // uses the same elapsedSeconds field and would show a descending counter on screen.
-      const prevSeconds = state.seconds;
-      const newSeconds = isStoppedResetAfterRestore
-        ? state.seconds
-        : hasStartedMoving
-          ? Math.max(state.seconds, data.elapsedSeconds ?? state.seconds)
-          : state.seconds;
-
-      // Use treadmill distance when it reports a non-zero value.
-      // Many treadmills (including SW / T30EA-0227) always transmit distanceKm=0 even
-      // when running, so we fall back to integrating speed × elapsed-time delta.
-      let km: number;
-      if (isStoppedResetAfterRestore) {
-        km = state.km;
-      } else if (data.distanceKm !== undefined && data.distanceKm > 0) {
-        km = Math.max(state.km, data.distanceKm);
-      } else if (hasStartedMoving && speedKph > MOVING_SPEED_KPH) {
-        const deltaSeconds = Math.min(2, Math.max(0, newSeconds - prevSeconds));
-        km = state.km + (speedKph / 3600) * deltaSeconds;
-      } else {
-        km = state.km;
-      }
-
-      const steps = data.steps ?? estimateSteps(km);
-
-      const nextState = {
-        speedKph,
-        maxSpeed: data.speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, data.speedKph),
-        seconds: newSeconds,
-        km,
-        kcal: isStoppedResetAfterRestore ? state.kcal : (data.kcal ?? state.kcal),
-        steps: isStoppedResetAfterRestore ? state.steps : steps,
-        inclinePercent: isStoppedResetAfterRestore ? state.inclinePercent : (data.inclinePercent ?? state.inclinePercent),
-        hasStartedMoving,
-        isPaused,
-        restoredFromStorage: state.restoredFromStorage && speedKph <= MOVING_SPEED_KPH,
-        autoStopRequested: state.autoStopRequested,
-      };
-
-      persistActiveWorkout({ ...state, ...nextState });
+      const nextState = applyTreadmillData(state, data);
+      persistActiveWorkout(nextState);
       return nextState;
     }),
   restoreActiveWorkout: () => {
@@ -270,15 +146,9 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   },
   tick: () =>
     set((state) => {
-      if (!state.startedAt || !state.hasStartedMoving || state.isPaused || state.speedKph <= MOVING_SPEED_KPH) return state;
-
-      const km = state.km + state.speedKph / 3600;
-      const nextState = {
-        seconds: state.seconds + 1,
-        km,
-        steps: estimateSteps(km),
-      };
-      persistActiveWorkout({ ...state, ...nextState });
+      const nextState = tickLiveWorkout(state);
+      if (nextState === state) return state;
+      persistActiveWorkout(nextState);
       return nextState;
     }),
   pause: () => set((state) => ({ isPaused: !state.isPaused })),
@@ -297,18 +167,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   stopAndSave: async () => {
     const state = get();
     if (state.ftmsConnection) void state.ftmsConnection.stopWorkout();
-    const seconds = inferWorkoutSeconds(state);
-    const workout: Workout = {
-      id: Date.now(),
-      date: state.startedDate ?? todayString(),
-      time: state.startedAt ?? nowTimeString(),
-      seconds,
-      km: Math.round(state.km * 100) / 100,
-      kcal: Math.round(state.kcal),
-      min: Math.round(seconds / 60),
-      steps: Math.round(state.steps),
-      maxSpeed: Math.round(state.maxSpeed * 10) / 10,
-    };
+    const workout: Workout = createWorkoutFromLiveState(state);
     if (workout.seconds <= 0) {
       clearActiveWorkout();
       set(resetActiveWorkoutState());

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppStore } from '../../app/app-store';
-import { db } from '../../db/app-db';
+import { useTodayWorkouts } from '../../db/workout-live-queries';
 import { todayString } from '../../domain/date-time';
 import { summarizeWorkouts } from '../../domain/stats';
-import { connectFtms } from '../bluetooth/ftms';
+import { FtmsConnectionError, connectFtms } from '../bluetooth/ftms';
 import { ExportButton } from '../export/ExportButton';
 import { useLiveStore } from '../live/live-store';
 import { TreadmillArt } from '../../ui/TreadmillArt';
@@ -15,7 +14,7 @@ export function HomeScreen() {
   const t = useT();
   const navigate = useNavigate();
   const [today, setToday] = useState(todayString);
-  const workouts = useLiveQuery(() => db.workouts.where('date').equals(today).toArray(), [today]) ?? [];
+  const workouts = useTodayWorkouts(today);
   const summary = summarizeWorkouts(workouts);
   const isConnected = useLiveStore((state) => state.isConnected);
   const deviceName = useLiveStore((state) => state.deviceName);
@@ -57,7 +56,11 @@ export function HomeScreen() {
       showToast(t.home.connected);
     } catch (error) {
       setConnection(false, null);
-      showToast(error instanceof Error ? error.message : t.home.disconnectedToast);
+      if (error instanceof FtmsConnectionError) {
+        showToast(t.home[error.code]);
+        return;
+      }
+      showToast(t.home.disconnectedToast);
     }
   }
 

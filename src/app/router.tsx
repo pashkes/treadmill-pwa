@@ -1,6 +1,4 @@
 import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
-import { useEffect } from 'react';
-import { useAppStore } from './app-store';
 import { App } from '../App';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { LiveScreen } from '../features/live/LiveScreen';
@@ -44,13 +42,8 @@ const workoutDetailRoute = createRoute({
 
 function WorkoutDetailRoute() {
   const { workoutId } = workoutDetailRoute.useParams();
-  const showWorkoutDetail = useAppStore((state) => state.showWorkoutDetail);
 
-  useEffect(() => {
-    showWorkoutDetail(Number(workoutId));
-  }, [showWorkoutDetail, workoutId]);
-
-  return <WorkoutDetailScreen />;
+  return <WorkoutDetailScreen workoutId={Number(workoutId)} />;
 }
 
 const routeTree = rootRoute.addChildren([homeRoute, liveRoute, statsRoute, historyRoute, workoutDetailRoute]);

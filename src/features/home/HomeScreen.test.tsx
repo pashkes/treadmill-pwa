@@ -19,7 +19,6 @@ describe('HomeScreen', () => {
     window.localStorage.clear();
     useAppStore.setState({
       screen: 'home',
-      selectedWorkoutId: null,
       statsPeriod: 'week',
       toast: { message: '', visible: false },
       locale: 'ru',
