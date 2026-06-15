@@ -79,4 +79,23 @@ describe('HomeScreen', () => {
     expect(useLiveStore.getState().deviceName).toBe('SW7130EA-0227');
     expect(useAppStore.getState().toast).toEqual({ message: 'Подключено', visible: true });
   });
+
+  it('remembers the treadmill after a successful manual connection', async () => {
+    vi.mocked(connectFtms).mockResolvedValue({
+      deviceId: 'device-1',
+      deviceName: 'SW7130EA-0227',
+      startWorkout: vi.fn(),
+      stopWorkout: vi.fn(),
+      writeSpeed: vi.fn(),
+      disconnect: vi.fn(),
+    });
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Подключить' }));
+
+    expect(JSON.parse(window.localStorage.getItem('walking-app-remembered-treadmill') ?? '{}')).toMatchObject({
+      id: 'device-1',
+      name: 'SW7130EA-0227',
+    });
+  });
 });

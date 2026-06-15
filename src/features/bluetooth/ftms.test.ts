@@ -19,18 +19,17 @@ function createBluetoothDeviceFixture(
   name = 'Blue treadmill',
   options: BluetoothDeviceFixtureOptions = {},
 ): BluetoothDeviceFixture {
-  const treadmillData = Object.assign(new EventTarget(), {
-    startNotifications: () => options.startTreadmillNotifications?.() ?? Promise.resolve(treadmillData),
-    stopNotifications: () => Promise.resolve(treadmillData),
-    writeValueWithoutResponse: () => Promise.resolve(),
-    value: undefined as DataView | undefined,
-  }) satisfies BluetoothRemoteGATTCharacteristic & { value?: DataView };
+  const treadmillData = new EventTarget() as BluetoothRemoteGATTCharacteristic & { value?: DataView };
+  treadmillData.startNotifications = (): Promise<BluetoothRemoteGATTCharacteristic> =>
+    options.startTreadmillNotifications?.() ?? Promise.resolve(treadmillData);
+  treadmillData.stopNotifications = (): Promise<BluetoothRemoteGATTCharacteristic> => Promise.resolve(treadmillData);
+  treadmillData.writeValueWithoutResponse = (): Promise<void> => Promise.resolve();
+  treadmillData.value = undefined;
 
-  const controlPoint = Object.assign(new EventTarget(), {
-    startNotifications: () => Promise.resolve(controlPoint),
-    stopNotifications: () => Promise.resolve(controlPoint),
-    writeValueWithoutResponse: () => Promise.resolve(),
-  }) satisfies BluetoothRemoteGATTCharacteristic;
+  const controlPoint = new EventTarget() as BluetoothRemoteGATTCharacteristic;
+  controlPoint.startNotifications = (): Promise<BluetoothRemoteGATTCharacteristic> => Promise.resolve(controlPoint);
+  controlPoint.stopNotifications = (): Promise<BluetoothRemoteGATTCharacteristic> => Promise.resolve(controlPoint);
+  controlPoint.writeValueWithoutResponse = (): Promise<void> => Promise.resolve();
 
   const service: BluetoothRemoteGATTService = {
     getCharacteristic: (characteristic) =>
