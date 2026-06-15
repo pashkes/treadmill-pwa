@@ -14,6 +14,7 @@ function screenFromPath(pathname: string): ScreenName {
   if (pathname === '/live') return 'live';
   if (pathname === '/stats') return 'stats';
   if (pathname === '/history') return 'history';
+  if (pathname === '/settings') return 'settings';
   if (pathname.startsWith('/workouts/')) return 'detail';
   return 'home';
 }

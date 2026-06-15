@@ -3,6 +3,7 @@ const en = {
     home: 'Home',
     stats: 'Stats',
     history: 'History',
+    settings: 'Settings',
   },
   home: {
     title: 'Workout',
@@ -65,6 +66,15 @@ const en = {
       all: 'All',
     },
     weekLabels: ['W1', 'W2', 'W3', 'W4'] as string[],
+  },
+  settings: {
+    title: 'Settings',
+    savedTreadmill: 'Saved treadmill',
+    noSavedTreadmill: 'No saved treadmill',
+    forgetSavedTreadmill: 'Forget saved treadmill',
+    forgetConfirm: 'Forget saved treadmill?',
+    forgotten: 'Saved treadmill removed',
+    currentStatus: 'Connection status',
   },
   live: {
     title: 'Free Workout',

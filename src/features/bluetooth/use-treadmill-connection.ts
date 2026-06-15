@@ -12,8 +12,17 @@ function connectionErrorMessage(home: HomeMessages, code: FtmsConnectionErrorCod
 }
 
 export async function forgetRememberedTreadmill(): Promise<void> {
-  await Promise.resolve();
+  const remembered = readRememberedTreadmill();
   clearRememberedTreadmill();
+  if (!remembered || !navigator.bluetooth?.getDevices) return;
+
+  try {
+    const devices = await navigator.bluetooth.getDevices();
+    const device = devices.find((candidate) => candidate.id === remembered.id);
+    await device?.forget?.();
+  } catch (error) {
+    console.warn('[FTMS] failed to revoke remembered treadmill permission:', error);
+  }
 }
 
 export function useTreadmillConnection() {

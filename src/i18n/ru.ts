@@ -5,6 +5,7 @@ const ru: Translations = {
     home: 'Главная',
     stats: 'Статистика',
     history: 'История',
+    settings: 'Настройки',
   },
   home: {
     title: 'Workout',
@@ -67,6 +68,15 @@ const ru: Translations = {
       all: 'Всё',
     },
     weekLabels: ['Н1', 'Н2', 'Н3', 'Н4'],
+  },
+  settings: {
+    title: 'Настройки',
+    savedTreadmill: 'Сохранённая дорожка',
+    noSavedTreadmill: 'Сохранённой дорожки нет',
+    forgetSavedTreadmill: 'Удалить сохранённую дорожку',
+    forgetConfirm: 'Удалить сохранённую дорожку?',
+    forgotten: 'Сохранённая дорожка удалена',
+    currentStatus: 'Статус подключения',
   },
   live: {
     title: 'Свободная тренировка',

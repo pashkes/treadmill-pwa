@@ -5,6 +5,7 @@ const uk: Translations = {
     home: 'Головна',
     stats: 'Статистика',
     history: 'Історія',
+    settings: 'Налаштування',
   },
   home: {
     title: 'Workout',
@@ -67,6 +68,15 @@ const uk: Translations = {
       all: 'Все',
     },
     weekLabels: ['Т1', 'Т2', 'Т3', 'Т4'],
+  },
+  settings: {
+    title: 'Налаштування',
+    savedTreadmill: 'Збережена доріжка',
+    noSavedTreadmill: 'Збереженої доріжки немає',
+    forgetSavedTreadmill: 'Видалити збережену доріжку',
+    forgetConfirm: 'Видалити збережену доріжку?',
+    forgotten: 'Збережену доріжку видалено',
+    currentStatus: 'Статус підключення',
   },
   live: {
     title: 'Вільне тренування',
