@@ -171,15 +171,26 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     return true;
   },
   start: () => {
-    if (!get().isConnected) return false;
+    const currentState = get();
+    if (!currentState.isConnected) return false;
+
+    if (currentState.startedAt && currentState.startedDate) {
+      const nextState = {
+        isPaused: false,
+        autoStopRequested: false,
+      };
+      set(nextState);
+      persistActiveWorkout({ ...currentState, ...nextState });
+      return true;
+    }
 
     const nextState = {
       isPaused: false,
       startedDate: todayString(),
       startedAt: nowTimeString(),
       seconds: 0,
-      speedKph: get().speedKph,
-      maxSpeed: get().speedKph,
+      speedKph: currentState.speedKph,
+      maxSpeed: currentState.speedKph,
       km: 0,
       kcal: 0,
       steps: 0,
@@ -188,8 +199,8 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       autoStopRequested: false,
     };
     set(nextState);
-    persistActiveWorkout({ ...get(), ...nextState });
-    void get().ftmsConnection?.startWorkout();
+    persistActiveWorkout({ ...currentState, ...nextState });
+    void currentState.ftmsConnection?.startWorkout();
     return true;
   },
   tick: () =>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../../db/app-db';
 import { useLiveStore } from './live-store';
 
@@ -51,6 +51,41 @@ describe('live-store', () => {
 
     expect(started).toBe(true);
     expect(useLiveStore.getState().startedAt).not.toBeNull();
+  });
+
+  it('continues a restored active workout without resetting metrics or sending start', () => {
+    const startWorkout = vi.fn().mockResolvedValue(undefined);
+    useLiveStore.setState({
+      isConnected: true,
+      deviceName: 'Blue treadmill',
+      startedDate: '2026-06-15',
+      startedAt: '12:00',
+      ftmsConnection: {
+        deviceName: 'Blue treadmill',
+        startWorkout,
+        stopWorkout: vi.fn().mockResolvedValue(undefined),
+        writeSpeed: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn(),
+      },
+      seconds: 278,
+      speedKph: 6,
+      maxSpeed: 6,
+      km: 0.4,
+      kcal: 38,
+      steps: 512,
+      inclinePercent: 2,
+      hasStartedMoving: true,
+    });
+
+    const started = useLiveStore.getState().start();
+
+    expect(started).toBe(true);
+    expect(startWorkout).not.toHaveBeenCalled();
+    expect(useLiveStore.getState().seconds).toBe(278);
+    expect(useLiveStore.getState().km).toBe(0.4);
+    expect(useLiveStore.getState().kcal).toBe(38);
+    expect(useLiveStore.getState().steps).toBe(512);
+    expect(useLiveStore.getState().startedAt).toBe('12:00');
   });
 
   it('does not simulate live metrics on timer ticks', () => {
