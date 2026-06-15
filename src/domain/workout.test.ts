@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCadence, formatDuration, formatPace, formatSpeed, workoutSeconds } from './workout';
+import { formatCadence, formatDuration, formatFastestPace, formatPace, formatSpeed, formatTopSpeed, workoutSeconds } from './workout';
 
 describe('workout calculations', () => {
   it('formats duration as hh:mm:ss', () => {
@@ -20,5 +20,13 @@ describe('workout calculations', () => {
 
   it('formats average pace from elapsed time and distance', () => {
     expect(formatPace({ seconds: 13 * 60 + 48, km: 1.3 })).toBe('10\'37"');
+  });
+
+  it('does not format top speed lower than average speed for rounded short workouts', () => {
+    const workout = { seconds: 31, km: 0.01, maxSpeed: 1 };
+
+    expect(formatSpeed(workout)).toBe('1.2');
+    expect(formatTopSpeed(workout)).toBe('1.2');
+    expect(formatFastestPace(workout)).toBe('51\'40"');
   });
 });
