@@ -23,6 +23,7 @@ type LiveState = {
   steps: number;
   inclinePercent: number;
   hasStartedMoving: boolean;
+  restoredFromStorage: boolean;
   autoStopRequested: boolean;
   setConnection: (isConnected: boolean, deviceName: string | null) => void;
   setFtmsConnection: (connection: FtmsConnection | null) => void;
@@ -107,6 +108,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
   steps: 0,
   inclinePercent: 0,
   hasStartedMoving: false,
+  restoredFromStorage: false,
   autoStopRequested: false,
   setConnection: (isConnected, deviceName) => set({ isConnected, deviceName }),
   setFtmsConnection: (ftmsConnection) => set({ ftmsConnection }),
@@ -120,17 +122,30 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       const hasStartedMoving = state.hasStartedMoving || speedKph > MOVING_SPEED_KPH || state.km > 0 || (data.distanceKm ?? 0) > 0;
       const isPaused =
         state.startedAt && state.hasStartedMoving && data.speedKph !== undefined ? data.speedKph <= MOVING_SPEED_KPH : state.isPaused;
+      const isStoppedResetAfterRestore =
+        state.restoredFromStorage &&
+        data.speedKph !== undefined &&
+        data.speedKph <= MOVING_SPEED_KPH &&
+        ((data.elapsedSeconds !== undefined && data.elapsedSeconds < state.seconds) ||
+          (data.distanceKm !== undefined && data.distanceKm < state.km) ||
+          data.kcal === 0);
 
       // Don't sync the timer until the belt is actually moving — the pre-start countdown
       // uses the same elapsedSeconds field and would show a descending counter on screen.
       const prevSeconds = state.seconds;
-      const newSeconds = hasStartedMoving ? Math.max(state.seconds, data.elapsedSeconds ?? state.seconds) : state.seconds;
+      const newSeconds = isStoppedResetAfterRestore
+        ? state.seconds
+        : hasStartedMoving
+          ? Math.max(state.seconds, data.elapsedSeconds ?? state.seconds)
+          : state.seconds;
 
       // Use treadmill distance when it reports a non-zero value.
       // Many treadmills (including SW / T30EA-0227) always transmit distanceKm=0 even
       // when running, so we fall back to integrating speed × elapsed-time delta.
       let km: number;
-      if (data.distanceKm !== undefined && data.distanceKm > 0) {
+      if (isStoppedResetAfterRestore) {
+        km = state.km;
+      } else if (data.distanceKm !== undefined && data.distanceKm > 0) {
         km = Math.max(state.km, data.distanceKm);
       } else if (hasStartedMoving && speedKph > MOVING_SPEED_KPH) {
         const deltaSeconds = Math.min(2, Math.max(0, newSeconds - prevSeconds));
@@ -146,11 +161,12 @@ export const useLiveStore = create<LiveState>((set, get) => ({
         maxSpeed: data.speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, data.speedKph),
         seconds: newSeconds,
         km,
-        kcal: data.kcal ?? state.kcal,
-        steps,
-        inclinePercent: data.inclinePercent ?? state.inclinePercent,
+        kcal: isStoppedResetAfterRestore ? state.kcal : (data.kcal ?? state.kcal),
+        steps: isStoppedResetAfterRestore ? state.steps : steps,
+        inclinePercent: isStoppedResetAfterRestore ? state.inclinePercent : (data.inclinePercent ?? state.inclinePercent),
         hasStartedMoving,
         isPaused,
+        restoredFromStorage: state.restoredFromStorage && speedKph <= MOVING_SPEED_KPH,
         autoStopRequested: state.autoStopRequested,
       };
 
@@ -166,6 +182,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       isConnected: false,
       isPaused: false,
       ftmsConnection: null,
+      restoredFromStorage: true,
       autoStopRequested: false,
     });
     return true;
@@ -196,6 +213,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       steps: 0,
       inclinePercent: 0,
       hasStartedMoving: false,
+      restoredFromStorage: false,
       autoStopRequested: false,
     };
     set(nextState);
@@ -261,6 +279,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       steps: 0,
       inclinePercent: 0,
       hasStartedMoving: false,
+      restoredFromStorage: false,
       autoStopRequested: false,
     });
     return workout;

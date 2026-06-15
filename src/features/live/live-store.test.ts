@@ -21,6 +21,7 @@ describe('live-store', () => {
       inclinePercent: 0,
       hasStartedMoving: false,
       autoStopRequested: false,
+      restoredFromStorage: false,
     });
     window.localStorage.clear();
   });
@@ -187,6 +188,7 @@ describe('live-store', () => {
       inclinePercent: 0,
       hasStartedMoving: false,
       autoStopRequested: false,
+      restoredFromStorage: false,
     });
 
     const restored = useLiveStore.getState().restoreActiveWorkout();
@@ -198,6 +200,40 @@ describe('live-store', () => {
     expect(useLiveStore.getState().km).toBe(0.4);
     expect(useLiveStore.getState().kcal).toBe(38);
     expect(useLiveStore.getState().inclinePercent).toBe(2);
+  });
+
+  it('does not overwrite restored metrics with a stopped reset packet after reconnect', () => {
+    useLiveStore.setState({
+      isConnected: true,
+      deviceName: 'Blue treadmill',
+      startedDate: '2026-06-15',
+      startedAt: '12:00',
+      seconds: 1398,
+      speedKph: 6,
+      maxSpeed: 6,
+      km: 2.3,
+      kcal: 114,
+      steps: 2947,
+      inclinePercent: 2,
+      hasStartedMoving: true,
+      restoredFromStorage: true,
+    });
+
+    useLiveStore.getState().setTreadmillData({
+      speedKph: 0,
+      distanceKm: 0,
+      kcal: 0,
+      elapsedSeconds: 0,
+      inclinePercent: 0,
+    });
+
+    expect(useLiveStore.getState().seconds).toBe(1398);
+    expect(useLiveStore.getState().km).toBe(2.3);
+    expect(useLiveStore.getState().kcal).toBe(114);
+    expect(useLiveStore.getState().steps).toBe(2947);
+    expect(useLiveStore.getState().inclinePercent).toBe(2);
+    expect(useLiveStore.getState().speedKph).toBe(0);
+    expect(useLiveStore.getState().isPaused).toBe(true);
   });
 
   it('accumulates distance from speed when the treadmill always reports distanceKm=0', () => {
@@ -276,6 +312,7 @@ describe('live-store', () => {
       inclinePercent: 0,
       hasStartedMoving: false,
       autoStopRequested: false,
+      restoredFromStorage: false,
     });
     expect(useLiveStore.getState().restoreActiveWorkout()).toBe(true);
 

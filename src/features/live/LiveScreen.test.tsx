@@ -35,6 +35,7 @@ describe('LiveScreen', () => {
       inclinePercent: 2.5,
       hasStartedMoving: true,
       autoStopRequested: false,
+      restoredFromStorage: false,
     });
   });
 
@@ -84,6 +85,42 @@ describe('LiveScreen', () => {
     expect(await screen.findByText('Пауза')).toBeVisible();
     expect(screen.getByText('Нажмите старт на дорожке, чтобы продолжить')).toBeVisible();
     expect(await db.workouts.count()).toBe(0);
+    expect(router.state.location.pathname).toBe('/live');
+  });
+
+  it('saves a restored paused workout after manual finish confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    useLiveStore.setState({
+      isPaused: true,
+      speedKph: 0,
+      seconds: 1398,
+      km: 2.3,
+      kcal: 114,
+      steps: 2947,
+      inclinePercent: 2,
+      restoredFromStorage: true,
+    });
+
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Завершить тренировку' }));
+
+    await waitFor(async () => {
+      expect(await db.workouts.count()).toBe(1);
+    });
+    expect(router.state.location.pathname).toBe('/');
+    expect(useLiveStore.getState().startedAt).toBeNull();
+  });
+
+  it('shows feedback when manual finish cannot save the workout', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(db.workouts, 'put').mockRejectedValue(new Error('IndexedDB unavailable'));
+
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Завершить тренировку' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Не удалось сохранить тренировку');
     expect(router.state.location.pathname).toBe('/live');
   });
 
