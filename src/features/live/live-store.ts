@@ -107,6 +107,39 @@ function clearActiveWorkout(): void {
   window.localStorage.removeItem(ACTIVE_WORKOUT_KEY);
 }
 
+function resetActiveWorkoutState(): Pick<
+  LiveState,
+  | 'isPaused'
+  | 'startedDate'
+  | 'startedAt'
+  | 'seconds'
+  | 'speedKph'
+  | 'maxSpeed'
+  | 'km'
+  | 'kcal'
+  | 'steps'
+  | 'inclinePercent'
+  | 'hasStartedMoving'
+  | 'restoredFromStorage'
+  | 'autoStopRequested'
+> {
+  return {
+    isPaused: false,
+    startedDate: null,
+    startedAt: null,
+    seconds: 0,
+    speedKph: 0,
+    maxSpeed: 0,
+    km: 0,
+    kcal: 0,
+    steps: 0,
+    inclinePercent: 0,
+    hasStartedMoving: false,
+    restoredFromStorage: false,
+    autoStopRequested: false,
+  };
+}
+
 export const useLiveStore = create<LiveState>((set, get) => ({
   isConnected: false,
   deviceName: null,
@@ -278,25 +311,12 @@ export const useLiveStore = create<LiveState>((set, get) => ({
     };
     if (workout.seconds <= 0) {
       clearActiveWorkout();
+      set(resetActiveWorkoutState());
       return null;
     }
     await addWorkout(workout);
     clearActiveWorkout();
-    set({
-      isPaused: false,
-      startedDate: null,
-      startedAt: null,
-      seconds: 0,
-      speedKph: 0,
-      maxSpeed: 0,
-      km: 0,
-      kcal: 0,
-      steps: 0,
-      inclinePercent: 0,
-      hasStartedMoving: false,
-      restoredFromStorage: false,
-      autoStopRequested: false,
-    });
+    set(resetActiveWorkoutState());
     return workout;
   },
   clearAutoStopRequest: () => set({ autoStopRequested: false }),
