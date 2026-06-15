@@ -25,7 +25,9 @@ export function estimateSteps(distanceKm: number): number {
   return Math.round((Math.max(0, distanceKm) * 1000) / ESTIMATED_STRIDE_LENGTH_METERS);
 }
 
-export function inferWorkoutSeconds(state: Pick<LiveWorkoutCalculationState, 'seconds' | 'km' | 'maxSpeed' | 'hasStartedMoving' | 'kcal' | 'steps'>): number {
+export function inferWorkoutSeconds(
+  state: Pick<LiveWorkoutCalculationState, 'seconds' | 'km' | 'maxSpeed' | 'hasStartedMoving' | 'kcal' | 'steps'>,
+): number {
   if (state.seconds > 0) return state.seconds;
 
   if (state.km > 0 && state.maxSpeed > MOVING_SPEED_KPH) {

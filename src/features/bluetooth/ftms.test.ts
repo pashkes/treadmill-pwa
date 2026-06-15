@@ -44,9 +44,19 @@ describe('connectFtms', () => {
       configurable: true,
     });
 
-    await expect(connectFtms(() => undefined, () => undefined)).rejects.toMatchObject({
+    await expect(
+      connectFtms(
+        () => undefined,
+        () => undefined,
+      ),
+    ).rejects.toMatchObject({
       code: 'bluetoothUnsupported',
     });
-    await expect(connectFtms(() => undefined, () => undefined)).rejects.toBeInstanceOf(FtmsConnectionError);
+    await expect(
+      connectFtms(
+        () => undefined,
+        () => undefined,
+      ),
+    ).rejects.toBeInstanceOf(FtmsConnectionError);
   });
 });
