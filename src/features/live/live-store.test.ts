@@ -66,6 +66,32 @@ describe('live-store', () => {
     expect(useLiveStore.getState().steps).toBe(0);
   });
 
+  it('advances elapsed time smoothly on timer ticks after the belt starts moving', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 10 });
+    const km = useLiveStore.getState().km;
+    const steps = useLiveStore.getState().steps;
+
+    useLiveStore.getState().tick();
+
+    expect(useLiveStore.getState().seconds).toBe(11);
+    expect(useLiveStore.getState().km).toBeCloseTo(km + 6 / 3600, 4);
+    expect(useLiveStore.getState().steps).toBeGreaterThan(steps);
+    expect(useLiveStore.getState().kcal).toBe(0);
+  });
+
+  it('does not advance elapsed time while paused', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 10 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 0, elapsedSeconds: 11 });
+
+    useLiveStore.getState().tick();
+
+    expect(useLiveStore.getState().seconds).toBe(11);
+  });
+
   it('saves workout date from start time instead of stop time', async () => {
     useLiveStore.setState({
       startedDate: '2026-06-13',
@@ -159,6 +185,69 @@ describe('live-store', () => {
     useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 20 });
     useLiveStore.getState().setTreadmillData({ speedKph: 0, elapsedSeconds: 21 });
 
-    expect(useLiveStore.getState().autoStopRequested).toBe(true);
+    expect(useLiveStore.getState().isPaused).toBe(true);
+    expect(useLiveStore.getState().autoStopRequested).toBe(false);
+  });
+
+  it('resumes from treadmill data after a hardware pause', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 20 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 0, elapsedSeconds: 21 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 22 });
+
+    expect(useLiveStore.getState().isPaused).toBe(false);
+    expect(useLiveStore.getState().seconds).toBe(22);
+  });
+
+  it('does not move elapsed time backwards from non-monotonic treadmill packets', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 65 });
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, elapsedSeconds: 64 });
+
+    expect(useLiveStore.getState().seconds).toBe(65);
+  });
+
+  it('does not add estimated distance from zero-speed pause packets', () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 0, elapsedSeconds: 20 });
+    const runningKm = useLiveStore.getState().km;
+    useLiveStore.getState().setTreadmillData({ speedKph: 0, distanceKm: 0, elapsedSeconds: 40 });
+
+    expect(useLiveStore.getState().km).toBe(runningKm);
+  });
+
+  it('saves a restored disconnected active workout and clears recovery storage', async () => {
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    useLiveStore.getState().start();
+    useLiveStore.getState().setTreadmillData({ speedKph: 6, distanceKm: 0.4, kcal: 38, elapsedSeconds: 278 });
+
+    useLiveStore.setState({
+      isConnected: false,
+      deviceName: null,
+      startedDate: null,
+      startedAt: null,
+      seconds: 0,
+      speedKph: 0,
+      maxSpeed: 0,
+      km: 0,
+      kcal: 0,
+      steps: 0,
+      inclinePercent: 0,
+      hasStartedMoving: false,
+      autoStopRequested: false,
+    });
+    expect(useLiveStore.getState().restoreActiveWorkout()).toBe(true);
+
+    const saved = await useLiveStore.getState().stopAndSave();
+
+    expect(saved?.seconds).toBe(278);
+    expect(await db.workouts.count()).toBe(1);
+    expect(window.localStorage.getItem('walking-app-active-workout')).toBeNull();
   });
 });

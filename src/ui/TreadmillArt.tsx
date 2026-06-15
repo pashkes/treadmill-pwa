@@ -1,6 +1,12 @@
 export function TreadmillArt() {
   return (
-    <svg viewBox="0 0 280 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-[260px]" aria-hidden="true">
+    <svg
+      viewBox="0 0 280 180"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="mx-auto block w-full max-w-[260px]"
+      aria-hidden="true"
+    >
       <rect x="20" y="110" width="240" height="18" rx="6" fill="#2c2c2e" />
       <rect x="30" y="114" width="220" height="10" rx="4" fill="#3a3a3c" />
       <rect x="30" y="128" width="12" height="36" rx="4" fill="#2c2c2e" />

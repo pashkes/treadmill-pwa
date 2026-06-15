@@ -17,4 +17,8 @@ describe('workout calculations', () => {
     expect(formatSpeed(workout)).toBe('6.0');
     expect(formatCadence(workout)).toBe('120');
   });
+
+  it('formats average pace from elapsed time and distance', () => {
+    expect(formatPace({ seconds: 13 * 60 + 48, km: 1.3 })).toBe('10\'37"');
+  });
 });

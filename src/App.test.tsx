@@ -58,15 +58,16 @@ describe('App', () => {
     });
   }
 
-  it('opens the live screen when an active workout was persisted before refresh', async () => {
+  it('restores active workout data without forcing the live screen on refresh', async () => {
     persistActiveWorkout();
 
     render(<RouterProvider router={router} />);
 
-    expect(await screen.findByText('Свободная тренировка')).toBeVisible();
-    expect(screen.getByText('04:38')).toBeVisible();
-    expect(screen.getByText('Blue treadmill')).toBeVisible();
+    expect(await screen.findByText('Workout')).toBeVisible();
     expect(screen.getByRole('status')).toHaveTextContent('Тренировка восстановлена. Подключите дорожку заново');
+    expect(router.state.location.pathname).toBe('/');
+    expect(useLiveStore.getState().seconds).toBe(278);
+    expect(useLiveStore.getState().deviceName).toBe('Blue treadmill');
   });
 
   it('translates the restored workout toast and keeps it away from the live header', async () => {
@@ -75,7 +76,7 @@ describe('App', () => {
 
     render(<RouterProvider router={router} />);
 
-    expect(await screen.findByText('Free Workout')).toBeVisible();
+    expect(await screen.findByText('Workout')).toBeVisible();
     expect(screen.getByRole('status')).toHaveTextContent('Workout restored. Reconnect treadmill');
     expect(screen.getByRole('status')).toHaveClass('bottom-[calc(env(safe-area-inset-bottom)+24px)]');
   });

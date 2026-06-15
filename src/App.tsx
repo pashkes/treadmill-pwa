@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Outlet, useRouterState } from '@tanstack/react-router';
 import { useAppStore } from './app/app-store';
 import { useT } from './i18n';
 import { migrateLegacyLocalStorageWorkouts } from './db/workout-repository';
@@ -21,7 +21,6 @@ export function App() {
   const showToast = useAppStore((state) => state.showToast);
   const showScreen = useAppStore((state) => state.showScreen);
   const restoreActiveWorkout = useLiveStore((state) => state.restoreActiveWorkout);
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
@@ -33,10 +32,8 @@ export function App() {
 
   useEffect(() => {
     if (!restoreActiveWorkout()) return;
-    showScreen('live');
-    void navigate({ to: '/live' });
     showToast(t.live.activeWorkoutRestored);
-  }, [navigate, restoreActiveWorkout, showScreen, showToast, t]);
+  }, [restoreActiveWorkout, showToast, t]);
 
   // One-way sync: URL → Zustand screen state. Navigation always goes through the router.
   useEffect(() => {
