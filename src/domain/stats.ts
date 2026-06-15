@@ -87,8 +87,16 @@ export function createCalorieBars(
     const monthEnd = monthStart.add({ months: 1 }).subtract({ days: 1 });
     const ranges = [
       { label: labels[0], start: monthStart, end: monthStart.with({ day: Math.min(7, monthEnd.day) }) },
-      { label: labels[1], start: monthStart.with({ day: Math.min(8, monthEnd.day) }), end: monthStart.with({ day: Math.min(14, monthEnd.day) }) },
-      { label: labels[2], start: monthStart.with({ day: Math.min(15, monthEnd.day) }), end: monthStart.with({ day: Math.min(21, monthEnd.day) }) },
+      {
+        label: labels[1],
+        start: monthStart.with({ day: Math.min(8, monthEnd.day) }),
+        end: monthStart.with({ day: Math.min(14, monthEnd.day) }),
+      },
+      {
+        label: labels[2],
+        start: monthStart.with({ day: Math.min(15, monthEnd.day) }),
+        end: monthStart.with({ day: Math.min(21, monthEnd.day) }),
+      },
       { label: labels[3], start: monthStart.with({ day: Math.min(22, monthEnd.day) }), end: monthEnd },
     ];
 

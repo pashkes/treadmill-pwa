@@ -20,10 +20,7 @@ const baseState = {
 
 describe('live workout calculations', () => {
   it('applies treadmill data without moving elapsed time backwards', () => {
-    const running = applyTreadmillData(
-      { ...baseState, seconds: 65, km: 0.1, hasStartedMoving: true },
-      { speedKph: 6, elapsedSeconds: 64 },
-    );
+    const running = applyTreadmillData({ ...baseState, seconds: 65, km: 0.1, hasStartedMoving: true }, { speedKph: 6, elapsedSeconds: 64 });
 
     expect(running.seconds).toBe(65);
     expect(running.speedKph).toBe(6);

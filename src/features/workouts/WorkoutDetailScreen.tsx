@@ -4,7 +4,15 @@ import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '../../app/app-store';
 import { useWorkout } from '../../db/workout-live-queries';
 import { deleteWorkout } from '../../db/workout-repository';
-import { formatCadence, formatDuration, formatFastestPace, formatPace, formatSpeed, formatTopSpeed, workoutSeconds } from '../../domain/workout';
+import {
+  formatCadence,
+  formatDuration,
+  formatFastestPace,
+  formatPace,
+  formatSpeed,
+  formatTopSpeed,
+  workoutSeconds,
+} from '../../domain/workout';
 import { useT } from '../../i18n';
 
 export function WorkoutDetailScreen({ workoutId }: { workoutId: number }) {
