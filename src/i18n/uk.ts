@@ -90,6 +90,7 @@ const uk: Translations = {
   },
   errors: {
     migrationFailed: 'Не вдалося перенести старі тренування',
+    saveWorkoutFailed: 'Не вдалося зберегти тренування',
   },
 };
 

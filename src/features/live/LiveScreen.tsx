@@ -34,9 +34,14 @@ export function LiveScreen() {
   async function handleManualStop() {
     if (!window.confirm(t.live.stopConfirm)) return;
 
-    const saved = await stopAndSave();
-    if (saved) showToast(t.live.workoutSaved);
-    void navigate({ to: '/' });
+    try {
+      const saved = await stopAndSave();
+      if (saved) showToast(t.live.workoutSaved);
+      void navigate({ to: '/' });
+    } catch (error) {
+      console.error(error);
+      showToast(t.errors.saveWorkoutFailed);
+    }
   }
 
   useEffect(() => {
