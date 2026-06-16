@@ -7,18 +7,21 @@ import { TabBar } from './ui/TabBar';
 import { Toast } from './ui/Toast';
 import { useLiveStore } from './features/live/live-store';
 import { InstallPromptBanner } from './features/pwa/InstallPromptBanner';
+import { useAutoConnectTreadmill } from './features/bluetooth/use-treadmill-connection';
 import type { ScreenName } from './app/app-store';
 
 function screenFromPath(pathname: string): ScreenName {
   if (pathname === '/live') return 'live';
   if (pathname === '/stats') return 'stats';
   if (pathname === '/history') return 'history';
+  if (pathname === '/settings') return 'settings';
   if (pathname.startsWith('/workouts/')) return 'detail';
   return 'home';
 }
 
 export function App() {
   const t = useT();
+  useAutoConnectTreadmill();
   const showToast = useAppStore((state) => state.showToast);
   const showScreen = useAppStore((state) => state.showScreen);
   const restoreActiveWorkout = useLiveStore((state) => state.restoreActiveWorkout);

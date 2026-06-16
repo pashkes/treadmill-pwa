@@ -26,6 +26,8 @@ describe('HomeScreen', () => {
     useLiveStore.setState({
       isConnected: false,
       deviceName: null,
+      connectionStatus: 'disconnected',
+      connectionError: null,
       isPaused: false,
       startedDate: null,
       startedAt: null,
@@ -49,6 +51,14 @@ describe('HomeScreen', () => {
     expect(screen.getByRole('button', { name: 'GO' })).toBeDisabled();
   });
 
+  it('shows connection status while auto-connect is in progress', () => {
+    useLiveStore.setState({ connectionStatus: 'connecting' });
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByText('Подключение...')).toBeVisible();
+  });
+
   it('starts a live workout after the treadmill is connected', async () => {
     useLiveStore.getState().setConnection(true, 'Blue treadmill');
     useAppStore.getState().showToast('Blue treadmill');
@@ -63,6 +73,7 @@ describe('HomeScreen', () => {
 
   it('shows a generic connected toast instead of duplicating the treadmill model', async () => {
     vi.mocked(connectFtms).mockResolvedValue({
+      deviceId: 'sw7130ea-0227',
       deviceName: 'SW7130EA-0227',
       startWorkout: vi.fn(),
       stopWorkout: vi.fn(),
@@ -75,5 +86,24 @@ describe('HomeScreen', () => {
 
     expect(useLiveStore.getState().deviceName).toBe('SW7130EA-0227');
     expect(useAppStore.getState().toast).toEqual({ message: 'Подключено', visible: true });
+  });
+
+  it('remembers the treadmill after a successful manual connection', async () => {
+    vi.mocked(connectFtms).mockResolvedValue({
+      deviceId: 'device-1',
+      deviceName: 'SW7130EA-0227',
+      startWorkout: vi.fn(),
+      stopWorkout: vi.fn(),
+      writeSpeed: vi.fn(),
+      disconnect: vi.fn(),
+    });
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Подключить' }));
+
+    expect(JSON.parse(window.localStorage.getItem('walking-app-remembered-treadmill') ?? '{}')).toMatchObject({
+      id: 'device-1',
+      name: 'SW7130EA-0227',
+    });
   });
 });

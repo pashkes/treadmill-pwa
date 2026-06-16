@@ -4,7 +4,8 @@ import { useAppStore } from '../../app/app-store';
 import { useTodayWorkouts } from '../../db/workout-live-queries';
 import { todayString } from '../../domain/date-time';
 import { summarizeWorkouts } from '../../domain/stats';
-import { FtmsConnectionError, connectFtms } from '../bluetooth/ftms';
+import { TreadmillConnectionStatus } from '../bluetooth/TreadmillConnectionStatus';
+import { useTreadmillConnection } from '../bluetooth/use-treadmill-connection';
 import { ExportButton } from '../export/ExportButton';
 import { useLiveStore } from '../live/live-store';
 import { TreadmillArt } from '../../ui/TreadmillArt';
@@ -17,12 +18,8 @@ export function HomeScreen() {
   const workouts = useTodayWorkouts(today);
   const summary = summarizeWorkouts(workouts);
   const isConnected = useLiveStore((state) => state.isConnected);
-  const deviceName = useLiveStore((state) => state.deviceName);
-  const ftmsConnection = useLiveStore((state) => state.ftmsConnection);
   const start = useLiveStore((state) => state.start);
-  const setConnection = useLiveStore((state) => state.setConnection);
-  const setFtmsConnection = useLiveStore((state) => state.setFtmsConnection);
-  const setTreadmillData = useLiveStore((state) => state.setTreadmillData);
+  const { toggleConnection } = useTreadmillConnection();
   const showToast = useAppStore((state) => state.showToast);
   const hideToast = useAppStore((state) => state.hideToast);
 
@@ -30,39 +27,6 @@ export function HomeScreen() {
     const timer = window.setInterval(() => setToday(todayString()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
-
-  async function toggleConnect() {
-    if (isConnected) {
-      ftmsConnection?.disconnect();
-      setFtmsConnection(null);
-      setConnection(false, null);
-      showToast(t.home.disconnectedToast);
-      return;
-    }
-
-    try {
-      const connection = await connectFtms(
-        (data) => {
-          setTreadmillData(data);
-        },
-        () => {
-          setFtmsConnection(null);
-          setConnection(false, null);
-          showToast(t.home.disconnectedToast);
-        },
-      );
-      setFtmsConnection(connection);
-      setConnection(true, connection.deviceName);
-      showToast(t.home.connected);
-    } catch (error) {
-      setConnection(false, null);
-      if (error instanceof FtmsConnectionError) {
-        showToast(t.home[error.code]);
-        return;
-      }
-      showToast(t.home.disconnectedToast);
-    }
-  }
 
   const locale = useAppStore((state) => state.locale);
 
@@ -95,14 +59,11 @@ export function HomeScreen() {
           GO
         </button>
         <div className="flex items-center justify-between rounded-[14px] bg-neutral-800 px-3 py-2.5">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">
-            <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_#30D158]' : 'bg-red-500'}`} />
-            <span className="truncate">{isConnected ? (deviceName ?? t.home.connected) : t.home.disconnected}</span>
-          </div>
+          <TreadmillConnectionStatus />
           <button
             type="button"
             className={`rounded-full px-4 py-2 text-[13px] font-bold text-white ${isConnected ? 'border border-neutral-700 bg-neutral-900 text-neutral-400' : 'bg-[#5B5BF6]'}`}
-            onClick={() => void toggleConnect()}
+            onClick={() => void toggleConnection()}
           >
             {isConnected ? t.home.disconnect : t.home.connect}
           </button>

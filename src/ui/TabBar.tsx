@@ -1,4 +1,4 @@
-import { BarChart3, History, Home } from 'lucide-react';
+import { BarChart3, History, Home, Settings } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAppStore, type ScreenName } from '../app/app-store';
 import { useT } from '../i18n';
@@ -12,6 +12,7 @@ export function TabBar() {
     { screen: 'home', label: t.nav.home, Icon: Home, path: '/' },
     { screen: 'stats', label: t.nav.stats, Icon: BarChart3, path: '/stats' },
     { screen: 'history', label: t.nav.history, Icon: History, path: '/history' },
+    { screen: 'settings', label: t.nav.settings, Icon: Settings, path: '/settings' },
   ];
 
   if (screen === 'live' || screen === 'detail') return null;

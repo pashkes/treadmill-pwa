@@ -8,6 +8,8 @@ describe('live-store', () => {
     useLiveStore.setState({
       isConnected: false,
       deviceName: null,
+      connectionStatus: 'disconnected',
+      connectionError: null,
       isPaused: false,
       startedDate: null,
       startedAt: null,
@@ -97,6 +99,24 @@ describe('live-store', () => {
     expect(useLiveStore.getState().startedAt).not.toBeNull();
   });
 
+  it('tracks Bluetooth connection status separately from workout persistence', () => {
+    useLiveStore.getState().setConnectionStatus('connecting', null);
+    expect(useLiveStore.getState().connectionStatus).toBe('connecting');
+
+    useLiveStore.getState().setConnection(true, 'Blue treadmill');
+    expect(useLiveStore.getState().connectionStatus).toBe('connected');
+    expect(useLiveStore.getState().connectionError).toBeNull();
+
+    useLiveStore.getState().setConnectionStatus('error', 'connectFailed');
+    expect(useLiveStore.getState().connectionStatus).toBe('error');
+    expect(useLiveStore.getState().connectionError).toBe('connectFailed');
+    expect(useLiveStore.getState().isConnected).toBe(false);
+
+    useLiveStore.getState().setConnection(false, null);
+    expect(useLiveStore.getState().connectionStatus).toBe('disconnected');
+    expect(useLiveStore.getState().connectionError).toBeNull();
+  });
+
   it('continues a restored active workout without resetting metrics or sending start', () => {
     const startWorkout = vi.fn().mockResolvedValue(undefined);
     useLiveStore.setState({
@@ -105,6 +125,7 @@ describe('live-store', () => {
       startedDate: '2026-06-15',
       startedAt: '12:00',
       ftmsConnection: {
+        deviceId: 'blue-treadmill',
         deviceName: 'Blue treadmill',
         startWorkout,
         stopWorkout: vi.fn().mockResolvedValue(undefined),
@@ -218,6 +239,8 @@ describe('live-store', () => {
     useLiveStore.setState({
       isConnected: false,
       deviceName: null,
+      connectionStatus: 'disconnected',
+      connectionError: null,
       isPaused: false,
       startedDate: null,
       startedAt: null,
@@ -344,6 +367,8 @@ describe('live-store', () => {
     useLiveStore.setState({
       isConnected: false,
       deviceName: null,
+      connectionStatus: 'disconnected',
+      connectionError: null,
       startedDate: null,
       startedAt: null,
       seconds: 0,

@@ -17,6 +17,7 @@ interface WindowEventMap {
 interface Navigator {
   bluetooth?: {
     requestDevice(options: RequestDeviceOptions): Promise<BluetoothDevice>;
+    getDevices?: () => Promise<BluetoothDevice[]>;
   };
 }
 
@@ -26,8 +27,10 @@ type RequestDeviceOptions = {
 };
 
 type BluetoothDevice = EventTarget & {
+  id: string;
   name?: string;
   gatt?: BluetoothRemoteGATTServer;
+  forget?: () => Promise<void>;
 };
 
 type BluetoothRemoteGATTServer = {
