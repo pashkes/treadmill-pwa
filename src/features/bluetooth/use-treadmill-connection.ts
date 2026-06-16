@@ -91,6 +91,7 @@ export function useTreadmillConnection() {
 export function useAutoConnectTreadmill(): void {
   const t = useT();
   const attemptedRef = useRef(false);
+  const isConnected = useLiveStore((state) => state.isConnected);
   const showToast = useAppStore((state) => state.showToast);
   const setConnection = useLiveStore((state) => state.setConnection);
   const setConnectionStatus = useLiveStore((state) => state.setConnectionStatus);
@@ -104,13 +105,14 @@ export function useAutoConnectTreadmill(): void {
   }, [setConnection, setFtmsConnection, showToast, t]);
 
   useEffect(() => {
-    if (attemptedRef.current) return;
+    if (attemptedRef.current || isConnected) return;
     attemptedRef.current = true;
 
     const remembered = readRememberedTreadmill();
     if (!remembered) return;
 
     let cancelled = false;
+    let settled = false;
     setConnectionStatus('connecting');
 
     connectRememberedFtmsDevice(
@@ -119,6 +121,7 @@ export function useAutoConnectTreadmill(): void {
       () => cleanupDisconnected(),
     )
       .then((connection) => {
+        settled = true;
         if (cancelled) {
           connection.disconnect();
           return;
@@ -127,6 +130,7 @@ export function useAutoConnectTreadmill(): void {
         setConnection(true, connection.deviceName ?? remembered.name);
       })
       .catch((error: unknown) => {
+        settled = true;
         if (cancelled) return;
         setFtmsConnection(null);
         if (error instanceof FtmsConnectionError) {
@@ -138,6 +142,9 @@ export function useAutoConnectTreadmill(): void {
 
     return () => {
       cancelled = true;
+      if (!settled) {
+        attemptedRef.current = false;
+      }
     };
-  }, [cleanupDisconnected, setConnection, setConnectionStatus, setFtmsConnection, setTreadmillData]);
+  }, [cleanupDisconnected, isConnected, setConnection, setConnectionStatus, setFtmsConnection, setTreadmillData]);
 }
