@@ -19,11 +19,11 @@ Treadmill Workout PWA is an offline-first React app for recording treadmill work
 ## Source Map
 
 - `src/main.tsx`: React entry point and router provider setup.
-- `src/App.tsx`: app shell, migration trigger, restored workout handling, and shared UI.
+- `src/App.tsx`: app shell, restored workout handling, and shared UI.
 - `src/app/app-store.ts`: runtime app state.
 - `src/app/router.tsx`: TanStack Router route tree.
 - `src/db/app-db.ts`: Dexie database definition.
-- `src/db/workout-repository.ts`: persistence API, legacy migration, export payload read path, and deletion.
+- `src/db/workout-repository.ts`: persistence API, export payload read path, and deletion.
 - `src/db/workout-live-queries.ts`: Dexie `useLiveQuery` hooks for reactive workout reads used by screens.
 - `src/domain/`: pure workout calculations, stats, date helpers, and export payload creation.
 - `src/features/bluetooth/ftms.ts`: FTMS characteristic parsing and Web Bluetooth connection helper.
@@ -41,8 +41,6 @@ Treadmill Workout PWA is an offline-first React app for recording treadmill work
 Completed workouts are stored in Dexie and exposed through repository functions in `src/db/workout-repository.ts`.
 
 Screens that display persisted workouts read from Dexie through hooks in `src/db/workout-live-queries.ts`, so UI updates after add/delete operations without a separate fetch cache.
-
-The legacy static app stored completed workouts in `localStorage` under `treadmill_v2`. On first launch after migration, `migrateLegacyLocalStorageWorkouts()` reads that key, normalizes valid workouts, writes them to Dexie, and marks the migration complete with `treadmill_v2_migrated_to_dexie`. The old data is intentionally not deleted.
 
 The active in-progress workout is a special case. It may be temporarily saved under `walking-app-active-workout` so reloads can restore metrics. This does not replace Dexie as the source of truth for completed workouts.
 

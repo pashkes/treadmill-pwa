@@ -74,6 +74,10 @@ export function applyTreadmillData<T extends LiveWorkoutCalculationState>(state:
   }
 
   const steps = data.steps ?? estimateSteps(km);
+  const kcal =
+    isStoppedResetAfterRestore || (state.hasStartedMoving && state.kcal > 0 && data.speedKph === 0 && data.kcal === 0)
+      ? state.kcal
+      : (data.kcal ?? state.kcal);
 
   return {
     ...state,
@@ -81,7 +85,7 @@ export function applyTreadmillData<T extends LiveWorkoutCalculationState>(state:
     maxSpeed: data.speedKph === undefined ? state.maxSpeed : Math.max(state.maxSpeed, data.speedKph),
     seconds,
     km,
-    kcal: isStoppedResetAfterRestore ? state.kcal : (data.kcal ?? state.kcal),
+    kcal,
     steps: isStoppedResetAfterRestore ? state.steps : steps,
     inclinePercent: isStoppedResetAfterRestore ? state.inclinePercent : (data.inclinePercent ?? state.inclinePercent),
     hasStartedMoving,
