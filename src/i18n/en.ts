@@ -94,7 +94,6 @@ const en = {
     notFound: 'Workout not found',
   },
   errors: {
-    migrationFailed: 'Failed to migrate old workouts',
     saveWorkoutFailed: 'Failed to save workout',
   },
 };

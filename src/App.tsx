@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { useAppStore } from './app/app-store';
 import { useT } from './i18n';
-import { migrateLegacyLocalStorageWorkouts } from './db/workout-repository';
 import { TabBar } from './ui/TabBar';
 import { Toast } from './ui/Toast';
 import { useLiveStore } from './features/live/live-store';
@@ -22,13 +21,6 @@ export function App() {
   const showScreen = useAppStore((state) => state.showScreen);
   const restoreActiveWorkout = useLiveStore((state) => state.restoreActiveWorkout);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-
-  useEffect(() => {
-    migrateLegacyLocalStorageWorkouts().catch((error) => {
-      console.error(error);
-      showToast(t.errors.migrationFailed);
-    });
-  }, [showToast, t]);
 
   useEffect(() => {
     if (!restoreActiveWorkout()) return;

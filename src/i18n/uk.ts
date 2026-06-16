@@ -96,7 +96,6 @@ const uk: Translations = {
     notFound: 'Тренування не знайдено',
   },
   errors: {
-    migrationFailed: 'Не вдалося перенести старі тренування',
     saveWorkoutFailed: 'Не вдалося зберегти тренування',
   },
 };

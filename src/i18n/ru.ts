@@ -96,7 +96,6 @@ const ru: Translations = {
     notFound: 'Тренировка не найдена',
   },
   errors: {
-    migrationFailed: 'Не удалось перенести старые тренировки',
     saveWorkoutFailed: 'Не удалось сохранить тренировку',
   },
 };
