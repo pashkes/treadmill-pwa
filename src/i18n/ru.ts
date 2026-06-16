@@ -5,7 +5,6 @@ const ru: Translations = {
     home: 'Главная',
     stats: 'Статистика',
     history: 'История',
-    settings: 'Настройки',
   },
   home: {
     title: 'Workout',
@@ -20,14 +19,6 @@ const ru: Translations = {
     steps: 'Шаги',
     bluetoothUnsupported: 'Нужен Chrome (Android / Desktop)',
     connectFailed: 'Не удалось подключиться к дорожке',
-  },
-  bluetooth: {
-    connected: 'Подключено',
-    connecting: 'Подключение...',
-    disconnected: 'Не подключено',
-    error: 'Ошибка подключения',
-    savedDeviceUnavailable: 'Автоподключение не поддерживается в этом браузере',
-    savedDeviceNotFound: 'Доступ к сохранённой дорожке удалён',
   },
   export: {
     label: 'Экспорт тренировок',
@@ -68,15 +59,6 @@ const ru: Translations = {
       all: 'Всё',
     },
     weekLabels: ['Н1', 'Н2', 'Н3', 'Н4'],
-  },
-  settings: {
-    title: 'Настройки',
-    savedTreadmill: 'Сохранённая дорожка',
-    noSavedTreadmill: 'Сохранённой дорожки нет',
-    forgetSavedTreadmill: 'Удалить сохранённую дорожку',
-    forgetConfirm: 'Удалить сохранённую дорожку?',
-    forgotten: 'Сохранённая дорожка удалена',
-    currentStatus: 'Статус подключения',
   },
   live: {
     title: 'Свободная тренировка',

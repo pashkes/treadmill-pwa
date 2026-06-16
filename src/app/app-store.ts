@@ -3,7 +3,7 @@ import { detectLocale } from '../i18n';
 import type { SupportedLocale } from '../i18n';
 import type { StatsPeriod } from '../domain/stats';
 
-export type ScreenName = 'home' | 'stats' | 'history' | 'detail' | 'live' | 'settings';
+export type ScreenName = 'home' | 'stats' | 'history' | 'detail' | 'live';
 
 type ToastState = {
   message: string;

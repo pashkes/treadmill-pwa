@@ -16,7 +16,6 @@ export type TreadmillData = {
 };
 
 export type FtmsConnection = {
-  deviceId: string | null;
   deviceName: string | null;
   startWorkout: () => Promise<void>;
   stopWorkout: () => Promise<void>;
@@ -24,7 +23,7 @@ export type FtmsConnection = {
   disconnect: () => void;
 };
 
-export type FtmsConnectionErrorCode = 'bluetoothUnsupported' | 'connectFailed' | 'savedDeviceUnavailable' | 'savedDeviceNotFound';
+export type FtmsConnectionErrorCode = 'bluetoothUnsupported' | 'connectFailed';
 
 export class FtmsConnectionError extends Error {
   code: FtmsConnectionErrorCode;
@@ -88,76 +87,41 @@ export function parseTreadmillData(value: DataView): TreadmillData {
   return data;
 }
 
-async function connectBluetoothDevice(
-  device: BluetoothDevice,
-  onData: (data: TreadmillData) => void,
-  onDisconnect: () => void,
-): Promise<FtmsConnection> {
-  let treadmillData: BluetoothRemoteGATTCharacteristic | null = null;
-  let treadmillDataListener: ((event: Event) => void) | null = null;
-  let treadmillNotificationsStarted = false;
+export async function connectFtms(onData: (data: TreadmillData) => void, onDisconnect: () => void): Promise<FtmsConnection> {
+  if (!navigator.bluetooth) {
+    throw new FtmsConnectionError('bluetoothUnsupported');
+  }
+
+  const device = await navigator.bluetooth.requestDevice({
+    filters: [{ services: [FTMS_SERVICE] }],
+    optionalServices: [FTMS_SERVICE],
+  });
+  device.addEventListener('gattserverdisconnected', onDisconnect);
+
+  const server = await device.gatt?.connect();
+  if (!server) throw new FtmsConnectionError('connectFailed');
+
+  const service = await server.getPrimaryService(FTMS_SERVICE);
+
+  const treadmillData = await service.getCharacteristic(TREADMILL_DATA_CHARACTERISTIC);
+  await treadmillData.startNotifications();
+
+  treadmillData.addEventListener('characteristicvaluechanged', (event: Event) => {
+    const value = (event as GattCharacteristicEvent).target.value;
+    if (!value) return;
+    onData(parseTreadmillData(value));
+  });
+
+  // Take control of the fitness machine so it doesn't drop the session after a few seconds.
+  // Some treadmills don't expose FMCP, so errors here are non-fatal.
   let controlPoint: BluetoothRemoteGATTCharacteristic | null = null;
-  let controlPointNotificationsStarted = false;
-  let cleanedUp = false;
-
-  function cleanupConnection(): void {
-    if (cleanedUp) return;
-    cleanedUp = true;
-
-    if (treadmillDataListener) {
-      treadmillData?.removeEventListener('characteristicvaluechanged', treadmillDataListener);
-    }
-    if (treadmillNotificationsStarted) {
-      void treadmillData?.stopNotifications().catch(() => {});
-    }
-    if (controlPointNotificationsStarted) {
-      void controlPoint?.stopNotifications().catch(() => {});
-    }
-    device.removeEventListener('gattserverdisconnected', handleDisconnect);
-  }
-
-  function handleDisconnect(): void {
-    cleanupConnection();
-    onDisconnect();
-  }
-
-  device.addEventListener('gattserverdisconnected', handleDisconnect);
-
   try {
-    const server = await device.gatt?.connect();
-    if (!server) throw new FtmsConnectionError('connectFailed');
-
-    const service = await server.getPrimaryService(FTMS_SERVICE);
-
-    treadmillData = await service.getCharacteristic(TREADMILL_DATA_CHARACTERISTIC);
-    await treadmillData.startNotifications();
-    treadmillNotificationsStarted = true;
-
-    treadmillDataListener = (event: Event) => {
-      const value = (event as GattCharacteristicEvent).target.value;
-      if (!value) return;
-      onData(parseTreadmillData(value));
-    };
-    treadmillData.addEventListener('characteristicvaluechanged', treadmillDataListener);
-
-    // Take control of the fitness machine so it doesn't drop the session after a few seconds.
-    // Some treadmills don't expose FMCP, so errors here are non-fatal.
-    try {
-      controlPoint = await service.getCharacteristic(FITNESS_MACHINE_CONTROL_POINT);
-      await controlPoint.startNotifications();
-      controlPointNotificationsStarted = true;
-      await controlPoint.writeValueWithoutResponse(new Uint8Array([OP_REQUEST_CONTROL]));
-    } catch (err) {
-      console.warn('[FTMS] control point not available or Request Control failed:', err);
-      if (controlPointNotificationsStarted) {
-        void controlPoint?.stopNotifications().catch(() => {});
-      }
-      controlPoint = null;
-      controlPointNotificationsStarted = false;
-    }
+    controlPoint = await service.getCharacteristic(FITNESS_MACHINE_CONTROL_POINT);
+    await controlPoint.startNotifications();
+    await controlPoint.writeValueWithoutResponse(new Uint8Array([OP_REQUEST_CONTROL]));
   } catch (err) {
-    cleanupConnection();
-    throw err;
+    console.warn('[FTMS] control point not available or Request Control failed:', err);
+    controlPoint = null;
   }
 
   async function writeControlPoint(data: Uint8Array): Promise<void> {
@@ -170,7 +134,6 @@ async function connectBluetoothDevice(
   }
 
   return {
-    deviceId: device.id || null,
     deviceName: device.name || null,
     startWorkout: () => writeControlPoint(new Uint8Array([OP_START_RESUME])),
     stopWorkout: () => writeControlPoint(new Uint8Array([OP_STOP_PAUSE, 0x01])),
@@ -182,43 +145,10 @@ async function connectBluetoothDevice(
       await writeControlPoint(new Uint8Array(buffer));
     },
     disconnect: () => {
-      cleanupConnection();
+      treadmillData.stopNotifications().catch(() => {});
+      controlPoint?.stopNotifications().catch(() => {});
       if (device.gatt?.connected) device.gatt.disconnect();
+      device.removeEventListener('gattserverdisconnected', onDisconnect);
     },
   };
-}
-
-export async function connectFtms(onData: (data: TreadmillData) => void, onDisconnect: () => void): Promise<FtmsConnection> {
-  if (!navigator.bluetooth) {
-    throw new FtmsConnectionError('bluetoothUnsupported');
-  }
-
-  const device = await navigator.bluetooth.requestDevice({
-    filters: [{ services: [FTMS_SERVICE] }],
-    optionalServices: [FTMS_SERVICE],
-  });
-
-  return connectBluetoothDevice(device, onData, onDisconnect);
-}
-
-export async function connectRememberedFtmsDevice(
-  deviceId: string,
-  onData: (data: TreadmillData) => void,
-  onDisconnect: () => void,
-): Promise<FtmsConnection> {
-  if (!navigator.bluetooth) {
-    throw new FtmsConnectionError('bluetoothUnsupported');
-  }
-
-  if (!navigator.bluetooth.getDevices) {
-    throw new FtmsConnectionError('savedDeviceUnavailable');
-  }
-
-  const devices = await navigator.bluetooth.getDevices();
-  const device = devices.find((candidate) => candidate.id === deviceId);
-  if (!device) {
-    throw new FtmsConnectionError('savedDeviceNotFound');
-  }
-
-  return connectBluetoothDevice(device, onData, onDisconnect);
 }
