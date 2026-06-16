@@ -21,8 +21,6 @@ describe('LiveScreen', () => {
     useLiveStore.setState({
       isConnected: true,
       deviceName: 'SW / T30EA-0227',
-      connectionStatus: 'connected',
-      connectionError: null,
       isPaused: false,
       startedDate: '2026-06-14',
       startedAt: '12:00',
@@ -49,18 +47,6 @@ describe('LiveScreen', () => {
 
     expect(screen.getByText(`11'35"`)).toBeVisible();
     expect(screen.getByText('2.5')).toBeVisible();
-  });
-
-  it('shows disconnected treadmill status on live screen', () => {
-    useLiveStore.setState({
-      connectionStatus: 'disconnected',
-      isConnected: false,
-      deviceName: null,
-    });
-
-    render(<RouterProvider router={router} />);
-
-    expect(screen.getByText('Не подключено')).toBeVisible();
   });
 
   it('removes broken speed controls and confirms manual finish', async () => {
@@ -143,7 +129,6 @@ describe('LiveScreen', () => {
       isPaused: true,
       speedKph: 0,
       ftmsConnection: {
-        deviceId: 'sw-t30ea-0227',
         deviceName: 'SW / T30EA-0227',
         startWorkout,
         stopWorkout: vi.fn().mockResolvedValue(undefined),

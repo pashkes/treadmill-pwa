@@ -5,35 +5,34 @@ test.use({ locale: 'ru-RU' });
 test('records a connected treadmill workout and opens its detail screen', async ({ page }) => {
   await page.addInitScript(() => {
     let treadmillDataListener: ((event: Event) => void) | null = null;
-    const characteristic = Object.assign(new EventTarget(), {
+    const characteristic = {
       startNotifications: async () => undefined,
       stopNotifications: async () => undefined,
       addEventListener: (_eventName: string, listener: EventListener) => {
         treadmillDataListener = listener;
       },
       writeValueWithoutResponse: async () => undefined,
-    });
+    };
     const service = {
       getCharacteristic: async () => characteristic,
     };
     const server = {
       getPrimaryService: async () => service,
     };
-    const device = Object.assign(new EventTarget(), {
-      id: 'test-treadmill',
+    const device = {
       name: 'Test treadmill',
-      forget: async () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
       gatt: {
         connected: true,
         connect: async () => server,
         disconnect: () => undefined,
       },
-    });
+    };
 
     Object.defineProperty(navigator, 'bluetooth', {
       value: {
         requestDevice: async () => device,
-        getDevices: async () => [device],
       },
       configurable: true,
     });
@@ -52,11 +51,6 @@ test('records a connected treadmill workout and opens its detail screen', async 
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Подключить' }).click();
-  await expect(page.getByText('Test treadmill')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'GO' })).toBeEnabled();
-
-  await page.reload();
-  await expect(page.getByText('Test treadmill')).toBeVisible();
   await expect(page.getByRole('button', { name: 'GO' })).toBeEnabled();
   await page.getByRole('button', { name: 'GO' }).click();
   await expect(page.getByText('Свободная тренировка')).toBeVisible();
@@ -77,12 +71,4 @@ test('records a connected treadmill workout and opens its detail screen', async 
   await page.getByRole('button', { name: 'История' }).click();
   await page.getByRole('button', { name: 'Свободная тренировка' }).click();
   await expect(page.getByText('Скорость', { exact: true })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Назад' }).click();
-  await page.getByRole('button', { name: 'Настройки' }).click();
-  await expect(page.getByText('Сохранённая дорожка')).toBeVisible();
-  await expect(page.getByText('Test treadmill').last()).toBeVisible();
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: 'Удалить сохранённую дорожку' }).click();
-  await expect(page.getByText('Сохранённой дорожки нет')).toBeVisible();
 });

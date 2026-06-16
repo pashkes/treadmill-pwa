@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '../../app/app-store';
 import { formatDuration, formatPace } from '../../domain/workout';
-import { TreadmillConnectionStatus } from '../bluetooth/TreadmillConnectionStatus';
 import { useLiveStore } from './live-store';
 import { useT } from '../../i18n';
 import { useScreenWakeLock } from './use-screen-wake-lock';
@@ -14,6 +13,7 @@ export function LiveScreen() {
   const navigate = useNavigate();
   const showToast = useAppStore((state) => state.showToast);
   const {
+    deviceName,
     isPaused,
     seconds,
     km,
@@ -64,7 +64,7 @@ export function LiveScreen() {
       <header className="flex items-center justify-between px-4">
         <div />
         <div className="min-w-0 max-w-[72vw] rounded-b-[18px] bg-neutral-900 px-5 py-2 text-center">
-          <TreadmillConnectionStatus compact />
+          <div className="truncate text-[13px] font-bold text-neutral-300">{deviceName ?? t.live.treadmill}</div>
         </div>
         <div className="h-10 w-10" />
       </header>
