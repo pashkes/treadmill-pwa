@@ -3,7 +3,7 @@ import type { Workout } from '../../domain/workout';
 import type { TreadmillData } from '../bluetooth/ftms';
 
 const MOVING_SPEED_KPH = 0.1;
-const ESTIMATED_STRIDE_LENGTH_METERS = 0.78125;
+const ESTIMATED_STRIDE_LENGTH_METERS = 0.9;
 
 export type LiveWorkoutCalculationState = {
   startedDate: string | null;

@@ -195,7 +195,7 @@ describe('live-store', () => {
     expect(useLiveStore.getState().km).toBe(1.25);
     expect(useLiveStore.getState().kcal).toBe(80);
     expect(useLiveStore.getState().seconds).toBe(120);
-    expect(useLiveStore.getState().steps).toBe(1600);
+    expect(useLiveStore.getState().steps).toBe(1389);
     expect(useLiveStore.getState().inclinePercent).toBe(3);
   });
 
