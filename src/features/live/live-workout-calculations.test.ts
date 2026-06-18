@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyTreadmillData, createWorkoutFromLiveState, tickLiveWorkout } from './live-workout-calculations';
+import { applyTreadmillData, createWorkoutFromLiveState, estimateSteps, tickLiveWorkout } from './live-workout-calculations';
 
 const baseState = {
   deviceName: 'Blue treadmill',
@@ -19,6 +19,10 @@ const baseState = {
 };
 
 describe('live workout calculations', () => {
+  it('estimates steps using a 0.9 meter stride length', () => {
+    expect(estimateSteps(1)).toBe(1111);
+  });
+
   it('keeps the last positive calories when a stopped treadmill reset packet reports zero', () => {
     const stopped = applyTreadmillData(
       {
