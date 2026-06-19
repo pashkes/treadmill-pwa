@@ -25,6 +25,7 @@
   "type": "module",
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",
+    "@supabase/supabase-js": "^2.108.2",
     "@tanstack/react-router": "^1.170.15",
     "dexie": "^4.4.3",
     "dexie-react-hooks": "^4.4.0",
