@@ -6,6 +6,7 @@ import { todayString } from '../../domain/date-time';
 import { summarizeWorkouts } from '../../domain/stats';
 import { FtmsConnectionError, connectFtms } from '../bluetooth/ftms';
 import { ExportButton } from '../export/ExportButton';
+import { ImportButton } from '../export/ImportButton';
 import { useLiveStore } from '../live/live-store';
 import { TreadmillArt } from '../../ui/TreadmillArt';
 import { useT } from '../../i18n';
@@ -70,7 +71,10 @@ export function HomeScreen() {
     <main className="min-h-dvh pb-24">
       <header className="flex items-center justify-between px-4 pt-14">
         <h1 className="text-[28px] font-extrabold tracking-normal">{t.home.title}</h1>
-        <ExportButton />
+        <div className="flex items-center gap-2">
+          <ImportButton />
+          <ExportButton />
+        </div>
       </header>
       <div className="mx-4 mt-2 flex h-[200px] items-center justify-center">
         <TreadmillArt />
