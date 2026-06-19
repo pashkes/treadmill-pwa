@@ -24,7 +24,10 @@ export function useWorkoutSync(): void {
     async (userId: string) => {
       const pending = await listWorkoutsForSync(userId);
       const errors = pending.filter((workout) => workout.syncStatus === 'error').length;
-      setSyncResult(syncStatusFromCounts({ isOnline: navigator.onLine, isSyncing: false, pending: pending.length, errors }), pending.length);
+      setSyncResult(
+        syncStatusFromCounts({ isOnline: navigator.onLine, isSyncing: false, pending: pending.length, errors }),
+        pending.length,
+      );
     },
     [setSyncResult],
   );

@@ -18,10 +18,7 @@ export function AccountScreen() {
   const syncStatus = useWorkoutSyncStore((state) => state.status);
   const pendingCount = useWorkoutSyncStore((state) => state.pendingCount);
   const syncError = useWorkoutSyncStore((state) => state.error);
-  const authService = useMemo(
-    () => (supabase ? createAuthService(supabase as unknown as SupabaseAuthClient) : null),
-    [],
-  );
+  const authService = useMemo(() => (supabase ? createAuthService(supabase as unknown as SupabaseAuthClient) : null), []);
 
   async function runAuth(action: 'signIn' | 'signUp') {
     if (!authService) return;

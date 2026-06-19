@@ -19,10 +19,9 @@ export type Workout = {
   lastSyncError?: string;
 };
 
-export function createWorkoutSyncFields(now = new Date().toISOString()): Pick<
-  Workout,
-  'clientId' | 'ownerUserId' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'syncStatus'
-> {
+export function createWorkoutSyncFields(
+  now = new Date().toISOString(),
+): Pick<Workout, 'clientId' | 'ownerUserId' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'syncStatus'> {
   return {
     clientId: crypto.randomUUID(),
     ownerUserId: null,

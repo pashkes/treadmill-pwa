@@ -2,7 +2,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './app-db';
 
 export function useTodayWorkouts(today: string) {
-  return useLiveQuery(async () => (await db.workouts.where('date').equals(today).toArray()).filter((workout) => !workout.deletedAt), [today]) ?? [];
+  return (
+    useLiveQuery(async () => (await db.workouts.where('date').equals(today).toArray()).filter((workout) => !workout.deletedAt), [today]) ??
+    []
+  );
 }
 
 export function useAllWorkouts() {
@@ -10,7 +13,9 @@ export function useAllWorkouts() {
 }
 
 export function useWorkoutsByDateDesc() {
-  return useLiveQuery(async () => (await db.workouts.orderBy('date').reverse().toArray()).filter((workout) => !workout.deletedAt), []) ?? [];
+  return (
+    useLiveQuery(async () => (await db.workouts.orderBy('date').reverse().toArray()).filter((workout) => !workout.deletedAt), []) ?? []
+  );
 }
 
 export function useWorkout(id: number | null) {
