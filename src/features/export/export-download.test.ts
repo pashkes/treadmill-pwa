@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Workout } from '../../domain/workout';
+import { makeWorkout } from '../../test/workout-fixtures';
 import { createExportFile } from './export-download';
 
-const workout: Workout = {
+const workout: Workout = makeWorkout({
   id: 1,
   date: '2026-06-13',
   time: '08:00',
@@ -12,7 +13,7 @@ const workout: Workout = {
   min: 1,
   steps: 120,
   maxSpeed: 6,
-};
+});
 
 describe('createExportFile', () => {
   it('creates a json file name and versioned content', () => {

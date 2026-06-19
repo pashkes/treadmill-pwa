@@ -1,5 +1,9 @@
+export type SyncStatus = 'local' | 'pending' | 'syncing' | 'synced' | 'error';
+
 export type Workout = {
   id: number;
+  clientId: string;
+  ownerUserId: string | null;
   date: string;
   time: string;
   seconds: number;
@@ -8,7 +12,25 @@ export type Workout = {
   min: number;
   steps: number;
   maxSpeed: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  syncStatus: SyncStatus;
+  lastSyncError?: string;
 };
+
+export function createWorkoutSyncFields(
+  now = new Date().toISOString(),
+): Pick<Workout, 'clientId' | 'ownerUserId' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'syncStatus'> {
+  return {
+    clientId: crypto.randomUUID(),
+    ownerUserId: null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    syncStatus: 'local',
+  };
+}
 
 export type WorkoutLike = Partial<Pick<Workout, 'seconds' | 'min' | 'km' | 'steps' | 'maxSpeed'>>;
 

@@ -7,8 +7,9 @@ import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
 import { addWorkout, getWorkout } from '../../db/workout-repository';
 import type { Workout } from '../../domain/workout';
+import { makeWorkout } from '../../test/workout-fixtures';
 
-const workout: Workout = {
+const workout: Workout = makeWorkout({
   id: 100,
   date: '2026-06-13',
   time: '08:30',
@@ -18,7 +19,7 @@ const workout: Workout = {
   kcal: 65,
   steps: 1200,
   maxSpeed: 6,
-};
+});
 
 describe('WorkoutDetailScreen', () => {
   beforeEach(async () => {

@@ -6,10 +6,12 @@ import { TabBar } from './ui/TabBar';
 import { Toast } from './ui/Toast';
 import { useLiveStore } from './features/live/live-store';
 import { InstallPromptBanner } from './features/pwa/InstallPromptBanner';
+import { useWorkoutSync } from './features/sync/use-workout-sync';
 import type { ScreenName } from './app/app-store';
 
 function screenFromPath(pathname: string): ScreenName {
   if (pathname === '/live') return 'live';
+  if (pathname === '/account') return 'account';
   if (pathname === '/stats') return 'stats';
   if (pathname === '/history') return 'history';
   if (pathname.startsWith('/workouts/')) return 'detail';
@@ -18,6 +20,7 @@ function screenFromPath(pathname: string): ScreenName {
 
 export function App() {
   const t = useT();
+  useWorkoutSync();
   const showToast = useAppStore((state) => state.showToast);
   const showScreen = useAppStore((state) => state.showScreen);
   const restoreActiveWorkout = useLiveStore((state) => state.restoreActiveWorkout);

@@ -8,6 +8,7 @@ Treadmill Workout PWA is an offline-first React app for recording treadmill work
 - Vite for dev/build.
 - Tailwind CSS for styling.
 - Dexie and IndexedDB for completed workout persistence.
+- Supabase for optional email/password accounts and cloud workout sync.
 - `dexie-react-hooks` for reactive reads from persisted data.
 - Zustand for runtime UI and live workout state.
 - TanStack Router for URL-backed screens.
@@ -26,9 +27,12 @@ Treadmill Workout PWA is an offline-first React app for recording treadmill work
 - `src/db/workout-repository.ts`: persistence API, export payload read path, and deletion.
 - `src/db/workout-live-queries.ts`: Dexie `useLiveQuery` hooks for reactive workout reads used by screens.
 - `src/domain/`: pure workout calculations, stats, date helpers, and export payload creation.
+- `src/features/account/`: email/password account screen and sync status.
+- `src/features/auth/`: Supabase client guard, auth service, and auth runtime store.
 - `src/features/bluetooth/ftms.ts`: FTMS characteristic parsing and Web Bluetooth connection helper.
 - `src/features/live/`: active workout screen, runtime store, reload recovery storage, and pure live workout calculations.
 - `src/features/home/`: home screen and daily totals.
+- `src/features/sync/`: workout sync service, Supabase row adapter, sync store, and app-level sync hook.
 - `src/features/stats/`: stats screen and chart rendering.
 - `src/features/workouts/`: history and workout detail screens.
 - `src/features/export/`: JSON export UI and file download helper.
@@ -41,6 +45,14 @@ Treadmill Workout PWA is an offline-first React app for recording treadmill work
 Completed workouts are stored in Dexie and exposed through repository functions in `src/db/workout-repository.ts`.
 
 Screens that display persisted workouts read from Dexie through hooks in `src/db/workout-live-queries.ts`, so UI updates after add/delete operations without a separate fetch cache.
+
+Supabase sync is optional. Dexie remains the source of truth for screens, export, stats, and workout detail views. When a user signs in and the browser is online, the sync service uploads local pending workouts and downloads remote workouts into Dexie.
+
+Workouts sync by stable `clientId`. The local numeric `id` remains the browser-only primary key used by routes such as `/workouts/$workoutId`.
+
+Deletion uses soft deletes. `deleteWorkout()` sets `deletedAt`, updates `updatedAt`, and hides the workout from visible reads while keeping the row available for sync.
+
+Logout keeps local data on the device. If a different account signs in later, workouts already attached to another account are not uploaded to the current account.
 
 The active in-progress workout is a special case. It may be temporarily saved under `walking-app-active-workout` so reloads can restore metrics. This does not replace Dexie as the source of truth for completed workouts.
 
@@ -67,6 +79,7 @@ Routes are declared in `src/app/router.tsx`:
 - `/live`
 - `/stats`
 - `/history`
+- `/account`
 - `/workouts/$workoutId`
 
 Navigation should go through TanStack Router. `App.tsx` syncs the current URL back into the Zustand screen state for compatibility with existing UI state.
