@@ -3,6 +3,7 @@ import { addWorkout } from '../../db/workout-repository';
 import { nowTimeString, todayString } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
 import type { FtmsConnection, TreadmillData } from '../bluetooth/ftms';
+import { notifyLocalWorkoutChanged } from '../sync/sync-store';
 import { clearActiveWorkout, persistActiveWorkout, readActiveWorkout } from './active-workout-storage';
 import { applyTreadmillData, createWorkoutFromLiveState, tickLiveWorkout } from './live-workout-calculations';
 
@@ -174,6 +175,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       return null;
     }
     await addWorkout(workout);
+    notifyLocalWorkoutChanged();
     clearActiveWorkout();
     set(resetActiveWorkoutState());
     return workout;

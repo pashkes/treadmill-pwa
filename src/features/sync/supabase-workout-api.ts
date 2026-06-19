@@ -17,12 +17,12 @@ export type RemoteWorkoutRow = {
   deleted_at: string | null;
 };
 
-type SupabaseWorkoutClient = {
+export type SupabaseWorkoutClient = {
   from: (table: 'workouts') => {
     select: (columns: '*') => {
-      eq: (column: 'user_id', value: string) => Promise<{ data: RemoteWorkoutRow[] | null; error: { message: string } | null }>;
+      eq: (column: 'user_id', value: string) => PromiseLike<{ data: RemoteWorkoutRow[] | null; error: { message: string } | null }>;
     };
-    upsert: (rows: RemoteWorkoutRow[], options: { onConflict: 'client_id' }) => Promise<{ error: { message: string } | null }>;
+    upsert: (rows: RemoteWorkoutRow[], options: { onConflict: 'client_id' }) => PromiseLike<{ error: { message: string } | null }>;
   };
 };
 

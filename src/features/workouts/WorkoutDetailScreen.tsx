@@ -14,6 +14,7 @@ import {
   workoutSeconds,
 } from '../../domain/workout';
 import { useT } from '../../i18n';
+import { notifyLocalWorkoutChanged } from '../sync/sync-store';
 
 export function WorkoutDetailScreen({ workoutId }: { workoutId: number }) {
   const t = useT();
@@ -48,6 +49,7 @@ export function WorkoutDetailScreen({ workoutId }: { workoutId: number }) {
     if (!window.confirm(t.detail.deleteConfirm)) return;
 
     await deleteWorkout(workoutId);
+    notifyLocalWorkoutChanged();
     showToast(t.detail.workoutDeleted);
     void navigate({ to: '/history' });
   }
