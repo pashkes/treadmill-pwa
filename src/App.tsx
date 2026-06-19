@@ -11,6 +11,7 @@ import type { ScreenName } from './app/app-store';
 
 function screenFromPath(pathname: string): ScreenName {
   if (pathname === '/live') return 'live';
+  if (pathname === '/account') return 'account';
   if (pathname === '/stats') return 'stats';
   if (pathname === '/history') return 'history';
   if (pathname.startsWith('/workouts/')) return 'detail';
