@@ -36,6 +36,24 @@ describe('workout repository', () => {
     expect(await listWorkouts()).toEqual([]);
   });
 
+  it('hides soft-deleted workouts from visible reads', async () => {
+    await addWorkout(makeWorkout({ id: 100, deletedAt: null }));
+    await addWorkout(makeWorkout({ id: 101, clientId: '22222222-2222-4222-8222-222222222222', deletedAt: '2026-06-14T08:30:00.000Z' }));
+
+    expect((await listWorkouts()).map((item) => item.id)).toEqual([100]);
+  });
+
+  it('soft deletes workouts instead of removing them', async () => {
+    await addWorkout(makeWorkout({ id: 100, ownerUserId: 'user-a', syncStatus: 'synced' }));
+
+    await deleteWorkout(100);
+    const saved = await db.workouts.get(100);
+
+    expect(saved?.deletedAt).toBeTruthy();
+    expect(saved?.syncStatus).toBe('pending');
+    expect(await getWorkout(100)).toBeUndefined();
+  });
+
   it('creates an export payload from persisted workouts', async () => {
     await addWorkout(workout);
 
