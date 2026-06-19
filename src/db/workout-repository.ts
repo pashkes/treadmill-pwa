@@ -1,4 +1,4 @@
-import { createExportPayload, type WorkoutExportPayload } from '../domain/export';
+import { createExportPayload, parseWorkoutExportPayload, type WorkoutExportPayload } from '../domain/export';
 import type { Workout } from '../domain/workout';
 import { db } from './app-db';
 
@@ -29,4 +29,11 @@ export async function exportWorkouts(): Promise<Workout[]> {
 
 export async function createWorkoutExportPayload(): Promise<WorkoutExportPayload> {
   return createExportPayload(await exportWorkouts());
+}
+
+export async function importWorkoutExportPayload(content: string): Promise<number> {
+  const payload = parseWorkoutExportPayload(content);
+  if (payload.workouts.length === 0) return 0;
+  await bulkPutWorkouts(payload.workouts);
+  return payload.workouts.length;
 }

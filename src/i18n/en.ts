@@ -23,6 +23,11 @@ const en = {
     ready: 'Export ready',
     failed: 'Failed to export workouts',
   },
+  import: {
+    label: 'Import workouts',
+    ready: 'Import ready',
+    failed: 'Failed to import workouts',
+  },
   pwa: {
     installTitle: 'Install Workout',
     installDescription: 'Open workouts faster from your home screen.',

@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Workout } from '../domain/workout';
 import { db } from './app-db';
-import { addWorkout, createWorkoutExportPayload, deleteWorkout, getWorkout, listWorkouts } from './workout-repository';
+import {
+  addWorkout,
+  createWorkoutExportPayload,
+  deleteWorkout,
+  getWorkout,
+  importWorkoutExportPayload,
+  listWorkouts,
+} from './workout-repository';
 
 const workout: Workout = {
   id: 100,
@@ -46,5 +53,18 @@ describe('workout repository', () => {
     expect(payload.schemaVersion).toBe(1);
     expect(payload.workouts).toEqual([workout]);
     expect(new Date(payload.exportedAt).toString()).not.toBe('Invalid Date');
+  });
+
+  it('imports workouts from an export payload', async () => {
+    const imported = await importWorkoutExportPayload(
+      JSON.stringify({
+        schemaVersion: 1,
+        exportedAt: '2026-06-13T10:00:00.000Z',
+        workouts: [workout, { ...workout, id: 101, date: '2026-06-14' }],
+      }),
+    );
+
+    expect(imported).toBe(2);
+    expect((await listWorkouts()).map((item) => item.id)).toEqual([101, 100]);
   });
 });
