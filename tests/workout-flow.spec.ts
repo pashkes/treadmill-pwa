@@ -50,6 +50,10 @@ test('records a connected treadmill workout and opens its detail screen', async 
   });
 
   await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Аккаунт' })).toBeVisible();
+  await page.getByRole('button', { name: 'Аккаунт' }).click();
+  await expect(page.getByRole('heading', { name: 'Аккаунт' })).toBeVisible();
+  await page.getByRole('button', { name: 'Главная' }).click();
   await page.getByRole('button', { name: 'Подключить' }).click();
   await expect(page.getByRole('button', { name: 'GO' })).toBeEnabled();
   await page.getByRole('button', { name: 'GO' }).click();
