@@ -4,9 +4,9 @@ Instructions for AI coding agents working in this repository.
 
 ## Project
 
-This is an offline-first treadmill workout PWA built with React, Vite, TypeScript, Tailwind CSS, Dexie, Zustand, TanStack Router, and vite-plugin-pwa.
+This is an offline-first treadmill workout PWA built with React, Vite, TypeScript, Tailwind CSS, Dexie, Zustand, TanStack Router, Supabase, and vite-plugin-pwa.
 
-The app records treadmill workouts, stores completed workouts locally in IndexedDB, migrates legacy `localStorage` workouts from `treadmill_v2`, supports JSON export, and includes Web Bluetooth FTMS integration.
+The app records treadmill workouts, stores completed workouts locally in IndexedDB, optionally syncs workouts to Supabase for signed-in users, migrates legacy `localStorage` workouts from `treadmill_v2`, supports JSON export, and includes Web Bluetooth FTMS integration.
 
 ## Commands
 
@@ -22,14 +22,17 @@ npm run test:e2e
 npm run format:check
 ```
 
-Run the narrowest useful check while developing. Before calling work complete, run at least `npm run test`, `npm run lint`, and `npm run build`. Run `npm run test:e2e` when changing routing, live workout flow, Bluetooth behavior, persistence, or PWA behavior.
+Run the narrowest useful check while developing. Before calling work complete, run at least `npm run test`, `npm run lint`, `npm run build`, and `npm run format:check`. Run `npm run test:e2e` when changing routing, live workout flow, Bluetooth behavior, persistence, sync behavior, auth behavior, or PWA behavior.
 
 ## Architecture
 
 - `src/app/`: app shell, Zustand runtime state, and TanStack Router route tree.
 - `src/db/`: Dexie database setup and workout repository APIs.
 - `src/domain/`: pure workout, stats, date/time, and export logic. Keep this independent from React.
+- `src/features/account/`: account screen, email/password auth UI, and sync status UI.
+- `src/features/auth/`: Supabase client guard, auth service, and auth runtime state.
 - `src/features/bluetooth/`: FTMS parsing and Web Bluetooth connection helpers.
+- `src/features/sync/`: workout sync service, Supabase workout adapter, sync runtime state, and app-level sync hook.
 - `src/features/live/`: live workout screen and runtime workout state.
 - `src/features/home/`: home screen and daily totals.
 - `src/features/stats/`: stats period UI and aggregate charts.
@@ -44,12 +47,24 @@ Run the narrowest useful check while developing. Before calling work complete, r
 ## State And Data Rules
 
 - Dexie/IndexedDB is the source of truth for completed workouts.
+- Supabase is an optional remote replica for authenticated users; the app must continue working without Supabase env vars, without auth, and offline.
 - Use `dexie-react-hooks` `useLiveQuery` for screens that read persisted workouts.
-- Zustand is only for runtime state: active screen, selected workout id, toast state, stats period, locale, Bluetooth status, and live workout state.
+- Zustand is only for runtime state: active screen, selected workout id, toast state, stats period, locale, Bluetooth status, auth state, sync status, and live workout state.
 - Completed workouts must not be stored in `localStorage`.
+- Completed workouts sync by stable `clientId`; keep numeric `id` as the local IndexedDB primary key for existing routes and UI.
+- Deletions use soft delete via `deletedAt` so offline deletes can sync later.
+- Do not upload workouts already attached to a different `ownerUserId` into the currently signed-in account.
 - The legacy key `treadmill_v2` is read during migration and must not be deleted by migration code.
 - The active in-progress workout may be temporarily persisted in `localStorage` under `walking-app-active-workout` for reload recovery.
 - Keep persisted workout dates as local `YYYY-MM-DD` strings.
+
+## Supabase
+
+- Use email/password auth only unless a request explicitly expands auth providers.
+- Browser code must use only `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` / publishable key.
+- Never commit `.env.local`, service-role keys, database passwords, `sb_secret_*`, or other Supabase secrets.
+- `VITE_SUPABASE_URL` must be the project URL origin, for example `https://project-ref.supabase.co`, without `/rest/v1`.
+- Supabase schema and RLS setup lives in `supabase/workouts.sql`; setup instructions live in `docs/SUPABASE_SETUP.md`.
 
 ## Routing
 
