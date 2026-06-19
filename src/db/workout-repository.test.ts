@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Workout } from '../domain/workout';
+import { makeWorkout } from '../test/workout-fixtures';
 import { db } from './app-db';
 import {
   addWorkout,
@@ -10,17 +11,7 @@ import {
   listWorkouts,
 } from './workout-repository';
 
-const workout: Workout = {
-  id: 100,
-  date: '2026-06-13',
-  time: '08:30',
-  seconds: 600,
-  min: 10,
-  km: 1,
-  kcal: 65,
-  steps: 1200,
-  maxSpeed: 6,
-};
+const workout = makeWorkout();
 
 describe('workout repository', () => {
   beforeEach(async () => {
@@ -66,5 +57,32 @@ describe('workout repository', () => {
 
     expect(imported).toBe(2);
     expect((await listWorkouts()).map((item) => item.id)).toEqual([101, 100]);
+  });
+
+  it('preserves legacy workouts and adds sync metadata', async () => {
+    await db.workouts.put({
+      id: 777,
+      date: '2026-06-01',
+      time: '07:15',
+      seconds: 900,
+      min: 15,
+      km: 1.5,
+      kcal: 90,
+      steps: 1800,
+      maxSpeed: 6.5,
+    } as Workout);
+
+    const saved = await getWorkout(777);
+
+    expect(saved).toMatchObject({
+      id: 777,
+      date: '2026-06-01',
+      ownerUserId: null,
+      deletedAt: null,
+      syncStatus: 'local',
+    });
+    expect(saved?.clientId).toMatch(/[0-9a-f-]{36}/);
+    expect(new Date(saved?.createdAt ?? '').toString()).not.toBe('Invalid Date');
+    expect(new Date(saved?.updatedAt ?? '').toString()).not.toBe('Invalid Date');
   });
 });

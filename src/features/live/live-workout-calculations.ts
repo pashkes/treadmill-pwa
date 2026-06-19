@@ -1,5 +1,5 @@
 import { nowTimeString, todayString } from '../../domain/date-time';
-import type { Workout } from '../../domain/workout';
+import { createWorkoutSyncFields, type Workout } from '../../domain/workout';
 import type { TreadmillData } from '../bluetooth/ftms';
 
 const MOVING_SPEED_KPH = 0.1;
@@ -111,6 +111,7 @@ export function createWorkoutFromLiveState(state: LiveWorkoutCalculationState): 
   const seconds = inferWorkoutSeconds(state);
   return {
     id: Date.now(),
+    ...createWorkoutSyncFields(),
     date: state.startedDate ?? todayString(),
     time: state.startedAt ?? nowTimeString(),
     seconds,
