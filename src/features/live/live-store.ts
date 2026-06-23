@@ -174,11 +174,12 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       set(resetActiveWorkoutState());
       return null;
     }
-    await addWorkout(workout);
+    const savedId = await addWorkout(workout);
+    const savedWorkout = { ...workout, id: savedId };
     notifyLocalWorkoutChanged();
     clearActiveWorkout();
     set(resetActiveWorkoutState());
-    return workout;
+    return savedWorkout;
   },
   clearAutoStopRequest: () => set({ autoStopRequested: false }),
 }));

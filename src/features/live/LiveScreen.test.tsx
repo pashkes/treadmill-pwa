@@ -113,7 +113,7 @@ describe('LiveScreen', () => {
 
   it('shows feedback when manual finish cannot save the workout', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    vi.spyOn(db.workouts, 'put').mockRejectedValue(new Error('IndexedDB unavailable'));
+    vi.spyOn(db.workouts, 'add').mockRejectedValue(new Error('IndexedDB unavailable'));
 
     render(<RouterProvider router={router} />);
 

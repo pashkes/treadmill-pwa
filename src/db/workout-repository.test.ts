@@ -27,6 +27,24 @@ describe('workout repository', () => {
     expect(await getWorkout(100)).toEqual(workout);
   });
 
+  it('keeps both workouts when a new workout id collides with an existing one', async () => {
+    await addWorkout(makeWorkout({ id: 100, time: '08:30', kcal: 65 }));
+
+    const savedId = await addWorkout(
+      makeWorkout({
+        id: 100,
+        clientId: '22222222-2222-4222-8222-222222222222',
+        time: '20:17',
+        kcal: 201,
+      }),
+    );
+
+    const saved = await listWorkouts();
+    expect(saved).toHaveLength(2);
+    expect(saved.map((item) => item.kcal).sort((a, b) => a - b)).toEqual([65, 201]);
+    expect(savedId).not.toBe(100);
+  });
+
   it('deletes a persisted workout', async () => {
     await addWorkout(workout);
 
