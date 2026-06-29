@@ -43,6 +43,9 @@ export class AppDb extends Dexie {
             Object.assign(workout, normalizeWorkoutForLocalStorage(workout));
           });
       });
+    this.version(3).stores({
+      workouts: 'id, clientId, ownerUserId, date, [date+time+id], updatedAt, deletedAt, syncStatus',
+    });
     this.workouts.hook('creating', (_primaryKey, workout) => {
       Object.assign(workout, normalizeWorkoutForLocalStorage(workout));
     });

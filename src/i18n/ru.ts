@@ -71,6 +71,7 @@ const ru: Translations = {
     emptyLine1: 'Тренировок пока нет.',
     emptyLine2: 'Нажми GO чтобы начать!',
     freeWorkout: 'Свободная тренировка',
+    loadMore: 'Показать ещё',
   },
   stats: {
     title: 'Статистика',

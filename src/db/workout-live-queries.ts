@@ -12,10 +12,21 @@ export function useAllWorkouts() {
   return useLiveQuery(async () => (await db.workouts.toArray()).filter((workout) => !workout.deletedAt), []) ?? [];
 }
 
-export function useWorkoutsByDateDesc() {
+export function useWorkoutsByDateDesc(limit?: number) {
   return (
-    useLiveQuery(async () => (await db.workouts.orderBy('date').reverse().toArray()).filter((workout) => !workout.deletedAt), []) ?? []
+    useLiveQuery(async () => {
+      const collection = db.workouts
+        .orderBy('[date+time+id]')
+        .reverse()
+        .filter((workout) => !workout.deletedAt);
+
+      return limit ? await collection.limit(limit).toArray() : await collection.toArray();
+    }, [limit]) ?? []
   );
+}
+
+export function useWorkoutHistoryCount() {
+  return useLiveQuery(async () => db.workouts.filter((workout) => !workout.deletedAt).count(), []) ?? 0;
 }
 
 export function useWorkout(id: number | null) {
