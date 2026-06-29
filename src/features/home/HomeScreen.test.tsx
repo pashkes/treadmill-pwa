@@ -51,6 +51,14 @@ describe('HomeScreen', () => {
     expect(screen.getByRole('button', { name: 'GO' })).toBeDisabled();
   });
 
+  it('opens manual workout entry without a treadmill connection', async () => {
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Добавить вручную' }));
+
+    expect(router.state.location.pathname).toBe('/manual-workout');
+  });
+
   it('shows the summed metrics for all workouts saved today', async () => {
     const today = todayString();
     await db.workouts.bulkPut([
