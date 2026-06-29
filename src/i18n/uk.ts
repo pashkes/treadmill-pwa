@@ -71,6 +71,7 @@ const uk: Translations = {
     emptyLine1: 'Тренувань ще немає.',
     emptyLine2: 'Натисни GO, щоб почати!',
     freeWorkout: 'Вільне тренування',
+    loadMore: 'Показати ще',
   },
   stats: {
     title: 'Статистика',

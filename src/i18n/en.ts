@@ -69,6 +69,7 @@ const en = {
     emptyLine1: 'No workouts yet.',
     emptyLine2: 'Press GO to start!',
     freeWorkout: 'Free Workout',
+    loadMore: 'Load more',
   },
   stats: {
     title: 'Stats',

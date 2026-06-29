@@ -1,17 +1,25 @@
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '../../app/app-store';
-import { useWorkoutsByDateDesc } from '../../db/workout-live-queries';
+import { useWorkoutHistoryCount, useWorkoutsByDateDesc } from '../../db/workout-live-queries';
 import { formatMonthLabel } from '../../domain/date-time';
 import type { Workout } from '../../domain/workout';
 import { useT } from '../../i18n';
+
+const INITIAL_VISIBLE_WORKOUTS = 10;
+const LOAD_MORE_WORKOUTS = 10;
 
 export function HistoryScreen() {
   const t = useT();
   const locale = useAppStore((state) => state.locale);
   const navigate = useNavigate();
-  const workouts = useWorkoutsByDateDesc();
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_WORKOUTS);
+  const workouts = useWorkoutsByDateDesc(visibleCount);
+  const workoutCount = useWorkoutHistoryCount();
+  const hasMoreWorkouts = visibleCount < workoutCount;
+  const groups = groupByMonth(workouts);
 
-  if (workouts.length === 0) {
+  if (workoutCount === 0) {
     return (
       <main className="min-h-dvh pb-24">
         <header className="px-4 pt-14">
@@ -29,7 +37,6 @@ export function HistoryScreen() {
     );
   }
 
-  const groups = groupByMonth(workouts);
   return (
     <main className="min-h-dvh pb-24">
       <header className="px-4 pt-14">
@@ -61,6 +68,15 @@ export function HistoryScreen() {
             ))}
           </section>
         ))}
+        {hasMoreWorkouts ? (
+          <button
+            type="button"
+            className="mx-4 mt-2 flex min-h-12 w-[calc(100%-32px)] items-center justify-center rounded-[16px] border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm font-extrabold text-neutral-300"
+            onClick={() => setVisibleCount((current) => Math.min(current + LOAD_MORE_WORKOUTS, workoutCount))}
+          >
+            {t.history.loadMore}
+          </button>
+        ) : null}
       </div>
     </main>
   );
