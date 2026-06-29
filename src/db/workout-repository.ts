@@ -17,7 +17,9 @@ export async function getWorkout(id: number): Promise<Workout | undefined> {
 }
 
 export async function addWorkout(workout: Workout): Promise<number> {
-  return db.workouts.put({ ...workout, syncStatus: workout.ownerUserId ? 'pending' : workout.syncStatus });
+  const syncStatus = workout.ownerUserId ? 'pending' : workout.syncStatus;
+  const id = (await db.workouts.get(workout.id)) ? await createLocalWorkoutId() : workout.id;
+  return db.workouts.add({ ...workout, id, syncStatus });
 }
 
 export async function deleteWorkout(id: number): Promise<void> {

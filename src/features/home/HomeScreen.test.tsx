@@ -7,6 +7,8 @@ import { useAppStore } from '../../app/app-store';
 import { db } from '../../db/app-db';
 import { useLiveStore } from '../live/live-store';
 import { connectFtms } from '../bluetooth/ftms';
+import { todayString } from '../../domain/date-time';
+import { createWorkoutSyncFields } from '../../domain/workout';
 
 vi.mock('../bluetooth/ftms', () => ({
   connectFtms: vi.fn(),
@@ -55,6 +57,75 @@ describe('HomeScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Добавить вручную' }));
 
     expect(router.state.location.pathname).toBe('/manual-workout');
+  });
+
+  it('shows the summed metrics for all workouts saved today', async () => {
+    const today = todayString();
+    await db.workouts.bulkPut([
+      {
+        id: 1,
+        ...createWorkoutSyncFields('2026-06-23T08:00:00.000Z'),
+        date: today,
+        time: '08:00',
+        seconds: 600,
+        km: 1.2,
+        kcal: 100,
+        min: 10,
+        steps: 1200,
+        maxSpeed: 6,
+      },
+      {
+        id: 2,
+        ...createWorkoutSyncFields('2026-06-23T20:00:00.000Z'),
+        date: today,
+        time: '20:00',
+        seconds: 1200,
+        km: 2.1,
+        kcal: 201,
+        min: 20,
+        steps: 2333,
+        maxSpeed: 7,
+      },
+    ]);
+
+    render(<RouterProvider router={router} />);
+
+    expect(await screen.findByText('301')).toBeInTheDocument();
+    expect(screen.getByText('3.30')).toBeInTheDocument();
+    expect(screen.getByText('3 533')).toBeInTheDocument();
+  });
+
+  it('keeps previous completed workouts in today totals after saving another workout', async () => {
+    const today = todayString();
+    await db.workouts.put({
+      id: 1,
+      ...createWorkoutSyncFields('2026-06-23T08:00:00.000Z'),
+      date: today,
+      time: '08:00',
+      seconds: 600,
+      km: 1.2,
+      kcal: 100,
+      min: 10,
+      steps: 1200,
+      maxSpeed: 6,
+    });
+    useLiveStore.setState({
+      startedDate: today,
+      startedAt: '20:00',
+      seconds: 1200,
+      km: 2.1,
+      kcal: 201,
+      steps: 2333,
+      maxSpeed: 7,
+      hasStartedMoving: true,
+    });
+
+    await useLiveStore.getState().stopAndSave();
+    render(<RouterProvider router={router} />);
+
+    expect(await screen.findByText('301')).toBeInTheDocument();
+    expect(screen.getByText('3.30')).toBeInTheDocument();
+    expect(screen.getByText('3 533')).toBeInTheDocument();
   });
 
   it('starts a live workout after the treadmill is connected', async () => {

@@ -56,6 +56,43 @@ describe('live-store', () => {
     expect(await db.workouts.count()).toBe(1);
   });
 
+  it('returns the actual saved id when a generated workout id collides', async () => {
+    await db.workouts.put({
+      id: 100,
+      clientId: '11111111-1111-4111-8111-111111111111',
+      ownerUserId: null,
+      date: '2026-06-14',
+      time: '08:00',
+      seconds: 600,
+      km: 1,
+      kcal: 65,
+      min: 10,
+      steps: 1200,
+      maxSpeed: 6,
+      createdAt: '2026-06-14T08:00:00.000Z',
+      updatedAt: '2026-06-14T08:00:00.000Z',
+      deletedAt: null,
+      syncStatus: 'local',
+    });
+    const now = vi.spyOn(Date, 'now').mockReturnValue(100);
+    useLiveStore.setState({
+      startedDate: '2026-06-14',
+      startedAt: '20:17',
+      seconds: 1200,
+      km: 2.1,
+      kcal: 201,
+      steps: 2333,
+      maxSpeed: 7,
+      hasStartedMoving: true,
+    });
+
+    const saved = await useLiveStore.getState().stopAndSave();
+
+    expect(saved?.id).not.toBe(100);
+    expect(await db.workouts.count()).toBe(2);
+    now.mockRestore();
+  });
+
   it('ends an empty active workout without keeping live state stuck', async () => {
     useLiveStore.setState({
       isConnected: true,
