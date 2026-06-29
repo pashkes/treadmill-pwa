@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { Plus } from 'lucide-react';
 import { useAppStore } from '../../app/app-store';
 import { useTodayWorkouts } from '../../db/workout-live-queries';
 import { todayString } from '../../domain/date-time';
@@ -97,6 +98,14 @@ export function HomeScreen() {
           }}
         >
           GO
+        </button>
+        <button
+          type="button"
+          className="mb-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-950 text-[14px] font-extrabold text-white"
+          onClick={() => void navigate({ to: '/manual-workout' })}
+        >
+          <Plus size={18} />
+          {t.home.addManualWorkout}
         </button>
         <div className="flex items-center justify-between rounded-[14px] bg-neutral-800 px-3 py-2.5">
           <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">

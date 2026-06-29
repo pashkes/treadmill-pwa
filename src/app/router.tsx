@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter } from '@tanstack/react-rout
 import { App } from '../App';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { LiveScreen } from '../features/live/LiveScreen';
+import { ManualWorkoutScreen } from '../features/manual/ManualWorkoutScreen';
 import { StatsScreen } from '../features/stats/StatsScreen';
 import { HistoryScreen } from '../features/workouts/HistoryScreen';
 import { WorkoutDetailScreen } from '../features/workouts/WorkoutDetailScreen';
@@ -21,6 +22,12 @@ const liveRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/live',
   component: LiveScreen,
+});
+
+const manualWorkoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/manual-workout',
+  component: ManualWorkoutScreen,
 });
 
 const statsRoute = createRoute({
@@ -53,7 +60,15 @@ function WorkoutDetailRoute() {
   return <WorkoutDetailScreen workoutId={Number(workoutId)} />;
 }
 
-const routeTree = rootRoute.addChildren([homeRoute, liveRoute, statsRoute, historyRoute, accountRoute, workoutDetailRoute]);
+const routeTree = rootRoute.addChildren([
+  homeRoute,
+  liveRoute,
+  manualWorkoutRoute,
+  statsRoute,
+  historyRoute,
+  accountRoute,
+  workoutDetailRoute,
+]);
 
 export const router = createRouter({ routeTree });
 

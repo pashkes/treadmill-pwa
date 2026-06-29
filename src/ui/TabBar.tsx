@@ -15,7 +15,7 @@ export function TabBar() {
     { screen: 'account', label: t.nav.account, Icon: User, path: '/account' },
   ];
 
-  if (screen === 'live' || screen === 'detail') return null;
+  if (screen === 'live' || screen === 'detail' || screen === 'manual') return null;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-neutral-800 bg-neutral-900 pb-[max(env(safe-area-inset-bottom),16px)] pt-2">
